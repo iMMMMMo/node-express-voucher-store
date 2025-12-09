@@ -23,10 +23,12 @@ app.use(session({
 }));
 
 const shopRoutes = require('./routes/shop');
+const authRoutes = require('./routes/auth');
 const productApiRoutes = require('./routes/api/products');
 const cartApiRoutes = require('./routes/api/cart');
 
 app.use('/', shopRoutes);
+app.use('/', authRoutes);
 app.use('/api/products', productApiRoutes);
 app.use('/api/cart', cartApiRoutes);
 

@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const ProductModel = require('../models/productModel');
 
+const attachUserToViews = (req, res, next) => {
+    res.locals.userId = req.session.userId;
+    res.locals.userName = req.session.userName;
+    res.locals.userEmail = req.session.userEmail;
+    res.locals.userRole = req.session.userRole;
+    next();
+};
+
+router.use(attachUserToViews);
+
 router.get('/', (req, res) => {
     res.render('index', { 
         title: 'Home | Shoppers', 

@@ -12,6 +12,7 @@
 -- - product: główna tabela produktów/usług
 -- - productattribute: definicje atrybutów (np. "Czas trwania", "Lokalizacja")
 -- - productattributevalue: wartości atrybutów dla konkretnych produktów
+-- - users: tabela użytkowników systemu (klienci i administratorzy)
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS product (
@@ -43,3 +44,15 @@ CREATE TABLE IF NOT EXISTS productattributevalue (
 
 CREATE INDEX IF NOT EXISTS idx_productattributevalue_product_id ON productattributevalue(product_id);
 CREATE INDEX IF NOT EXISTS idx_productattributevalue_attribute_id ON productattributevalue(attribute_id);
+
+CREATE TABLE IF NOT EXISTS users (
+    user_id SERIAL PRIMARY KEY,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
+    role VARCHAR(20) NOT NULL DEFAULT 'customer' CHECK (role IN ('admin', 'customer')),
+    "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

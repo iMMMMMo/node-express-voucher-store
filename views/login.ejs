@@ -1,0 +1,70 @@
+<%- include('partials/head', { title: 'Logowanie | Shoppers' }) %>
+<body>
+  
+  <div class="site-wrap">
+    <%- include('partials/header', { activePage: activePage }) %>
+
+    <div class="bg-light py-3">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12 mb-0"><a href="/">Strona główna</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Logowanie</strong></div>
+        </div>
+      </div>
+    </div>  
+
+    <div class="site-section">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <h2 class="h3 mb-3 text-black">Zaloguj się</h2>
+          </div>
+          <div class="col-md-7">
+            <form action="/login" method="post">
+              <div class="p-3 p-lg-5 border">
+                <% if (errors && errors.length > 0) { %>
+                  <div class="alert alert-danger">
+                    <ul class="mb-0">
+                      <% errors.forEach(error => { %>
+                        <li><%= error.msg %></li>
+                      <% }); %>
+                    </ul>
+                  </div>
+                <% } %>
+
+                <div class="form-group row">
+                  <div class="col-md-12">
+                    <label for="email" class="text-black">Email <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="email" name="email" value="<%= formData.email || '' %>" required>
+                  </div>
+                </div>
+
+                <div class="form-group row">
+                  <div class="col-md-12">
+                    <label for="password" class="text-black">Hasło <span class="text-danger">*</span></label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                  </div>
+                </div>
+
+                <div class="form-group row">
+                  <div class="col-lg-12">
+                    <input type="submit" class="btn btn-primary btn-lg btn-block" value="Zaloguj się">
+                  </div>
+                </div>
+
+                <div class="form-group row">
+                  <div class="col-lg-12 text-center">
+                    <p class="mb-0">Nie masz konta? <a href="/register">Zarejestruj się</a></p>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('partials/footer') %>
+  </div>
+
+<%- include('partials/scripts') %>
+

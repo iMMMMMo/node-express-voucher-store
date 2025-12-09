@@ -16,7 +16,20 @@
                 <div class="col-6 col-md-4 order-3 order-md-3 text-right">
                     <div class="site-top-icons">
                         <ul>
-                            <li><a href="#"><span class="icon icon-person"></span></a></li>
+                            <% if (typeof userName !== 'undefined' && userName) { %>
+                                <li class="d-none d-md-inline-block mr-2">
+                                    <span class="text-black"><%= userName %></span>
+                                </li>
+                                <li>
+                                    <form action="/logout" method="post" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" style="border: none; background: none; padding: 0;">
+                                            <span class="icon icon-person"></span>
+                                        </button>
+                                    </form>
+                                </li>
+                            <% } else { %>
+                                <li><a href="/login"><span class="icon icon-person"></span></a></li>
+                            <% } %>
                             <li><a href="#"><span class="icon icon-heart-o"></span></a></li>
                             <li>
                                 <a href="/cart" class="site-cart">
