@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const ProductModel = require('../models/productModel');
 
 router.get('/', (req, res) => {
     res.render('index', { 
@@ -8,20 +9,53 @@ router.get('/', (req, res) => {
     });
 });
 
-router.get('/shop', (req, res) => {
-    res.render('shop', { 
-        title: 'Shop | Shoppers', 
-        activePage: 'shop' 
-    });
+router.get('/shop', async (req, res) => {
+    try {
+        const products = await ProductModel.findAll();
+        res.render('shop', { 
+            title: 'Shop | Shoppers', 
+            activePage: 'shop',
+            products: products
+        });
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        res.status(500).render('shop', { 
+            title: 'Shop | Shoppers', 
+            activePage: 'shop',
+            products: [],
+            error: 'Error loading products'
+        });
+    }
 });
 
-router.get('/shop-single/:id', (req, res) => {
-    const productId = req.params.id;
-    res.render('shop-single', { 
-        title: 'Product Details | Shoppers', 
-        activePage: 'shop',
-        productId: productId 
-    });
+router.get('/shop-single/:slug', async (req, res) => {
+    try {
+        const slug = req.params.slug;
+        const product = await ProductModel.findBySlug(slug);
+        
+        if (!product) {
+            return res.status(404).render('shop-single', {
+                title: 'Product Not Found | Shoppers',
+                activePage: 'shop',
+                product: null,
+                error: 'Product not found'
+            });
+        }
+
+        res.render('shop-single', { 
+            title: `${product.name} | Shoppers`, 
+            activePage: 'shop',
+            product: product
+        });
+    } catch (error) {
+        console.error('Error fetching product:', error);
+        res.status(500).render('shop-single', {
+            title: 'Product Details | Shoppers',
+            activePage: 'shop',
+            product: null,
+            error: 'Error loading product'
+        });
+    }
 });
 
 router.get('/cart', (req, res) => {
