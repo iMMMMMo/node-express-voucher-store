@@ -61,6 +61,14 @@
                         <h3 style="min-height: 3rem;"><a href="/shop-single/<%= product.slug %>"><%= product.name %></a></h3>
                         <p class="mb-2" style="flex: 1; min-height: 3rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"><%= product.description ? (product.description.length > 80 ? product.description.substring(0, 80) + '...' : product.description) : 'No description' %></p>
                         <p class="text-primary font-weight-bold mt-auto" style="margin-top: auto;"><%= parseFloat(product.finalPrice).toFixed(2) %> PLN</p>
+                        <button 
+                          class="btn btn-primary btn-sm mt-3 js-add-to-cart"
+                          data-slug="<%= product.slug %>"
+                          data-name="<%= product.name %>"
+                          data-price="<%= parseFloat(product.finalPrice).toFixed(2) %>"
+                          data-image="<%= product.imagePath || '/images/cloth_1.jpg' %>">
+                          Dodaj do koszyka
+                        </button>
                       </div>
                     </div>
                   </div>

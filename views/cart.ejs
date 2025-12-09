@@ -1,4 +1,4 @@
-<%- include('partials/head', { title: 'Shopping Cart | Shoppers' }) %>
+<%- include('partials/head', { title: 'Koszyk | Shoppers' }) %>
 <body>
   
   <div class="site-wrap">
@@ -7,7 +7,7 @@
     <div class="bg-light py-3">
       <div class="container">
         <div class="row">
-          <div class="col-md-12 mb-0"><a href="/">Home</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Cart</strong></div>
+          <div class="col-md-12 mb-0"><a href="/">Strona główna</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Koszyk</strong></div>
         </div>
       </div>
     </div>
@@ -15,94 +15,79 @@
     <div class="site-section">
       <div class="container">
         <div class="row mb-5">
-          <form class="col-md-12" method="post">
+          <div class="col-md-12">
             <div class="site-blocks-table">
               <table class="table table-bordered">
                 <thead>
                   <tr>
-                    <th 
-                      class="product-thumbnail">Image</th>
-                    <th class="product-name">Product</th>
-                    <th class="product-price">Price</th>
-                    <th class="product-quantity">Quantity</th>
-                    <th class="product-total">Total</th>
-                    <th class="product-remove">Remove</th>
+                    <th class="product-thumbnail">Zdjęcie</th>
+                    <th class="product-name">Produkt</th>
+                    <th class="product-price">Cena</th>
+                    <th class="product-quantity">Ilość</th>
+                    <th class="product-total">Razem</th>
+                    <th class="product-remove">Usuń</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td class="product-thumbnail">
-                      <img src="/images/cloth_1.jpg" alt="Image" class="img-fluid">
-                    </td>
-                    <td class="product-name">
-                      <h2 class="h5 text-black">Top Up T-Shirt</h2>
-                    </td>
-                    <td>$49.00</td>
-                    <td>
-                      <div class="input-group mb-3" style="max-width: 120px;">
-                        <div class="input-group-prepend">
-                          <button class="btn btn-outline-primary js-btn-minus" type="button">&minus;</button>
-                        </div>
-                        <input type="text" class="form-control text-center" value="1" placeholder="" aria-label="Example text with button addon" aria-describedby="button-addon1">
-                        <div class="input-group-append">
-                          <button class="btn btn-outline-primary js-btn-plus" type="button">&plus;</button>
-                        </div>
-                      </div>
-
-                    </td>
-                    <td>$49.00</td>
-                    <td><a href="#" class="btn btn-primary btn-sm">X</a></td>
-                  </tr>
-
-                  <tr>
-                    <td class="product-thumbnail">
-                      <img src="/images/cloth_2.jpg" alt="Image" class="img-fluid">
-                    </td>
-                    <td class="product-name">
-                      <h2 class="h5 text-black">Polo Shirt</h2>
-                    </td>
-                    <td>$49.00</td>
-                    <td>
-                      <div class="input-group mb-3" style="max-width: 120px;">
-                        <div class="input-group-prepend">
-                          <button class="btn btn-outline-primary js-btn-minus" type="button">&minus;</button>
-                        </div>
-                        <input type="text" class="form-control text-center" value="1" placeholder="" aria-label="Example text with button addon" aria-describedby="button-addon1">
-                        <div class="input-group-append">
-                          <button class="btn btn-outline-primary js-btn-plus" type="button">&plus;</button>
-                        </div>
-                      </div>
-
-                    </td>
-                    <td>$49.00</td>
-                    <td><a href="#" class="btn btn-primary btn-sm">X</a></td>
-                  </tr>
+                <tbody id="cart-items">
+                  <% if (cart && cart.length > 0) { %>
+                    <% cart.forEach((item) => { %>
+                      <tr data-slug="<%= item.slug %>">
+                        <td class="product-thumbnail">
+                          <img src="<%= item.imagePath %>" alt="<%= item.name %>" class="img-fluid">
+                        </td>
+                        <td class="product-name">
+                          <h2 class="h5 text-black"><%= item.name %></h2>
+                        </td>
+                        <td><%= item.price.toFixed(2) %> PLN</td>
+                        <td>
+                          <div class="input-group mb-3" style="max-width: 120px;">
+                            <div class="input-group-prepend">
+                              <button class="btn btn-outline-primary js-cart-minus" type="button" data-slug="<%= item.slug %>">&minus;</button>
+                            </div>
+                            <input type="text" class="form-control text-center js-cart-quantity" value="<%= item.quantity %>" data-slug="<%= item.slug %>" readonly>
+                            <div class="input-group-append">
+                              <button class="btn btn-outline-primary js-cart-plus" type="button" data-slug="<%= item.slug %>">&plus;</button>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="js-item-total"><%= (item.price * item.quantity).toFixed(2) %> PLN</td>
+                        <td><button class="btn btn-primary btn-sm js-cart-remove" data-slug="<%= item.slug %>">X</button></td>
+                      </tr>
+                    <% }); %>
+                  <% } else { %>
+                    <tr>
+                      <td colspan="6" class="text-center py-5">
+                        <p>Twój koszyk jest pusty.</p>
+                        <a href="/shop" class="btn btn-primary">Kontynuuj zakupy</a>
+                      </td>
+                    </tr>
+                  <% } %>
                 </tbody>
               </table>
             </div>
-          </form>
+          </div>
         </div>
 
         <div class="row">
           <div class="col-md-6">
             <div class="row mb-5">
               <div class="col-md-6 mb-3 mb-md-0">
-                <button class="btn btn-primary btn-sm btn-block">Update Cart</button>
+                <button class="btn btn-primary btn-sm btn-block" onclick="window.location.reload()">Aktualizuj koszyk</button>
               </div>
               <div class="col-md-6">
-                <button class="btn btn-outline-primary btn-sm btn-block" onclick="window.location='/shop'">Continue Shopping</button>
+                <button class="btn btn-outline-primary btn-sm btn-block" onclick="window.location='/shop'">Kontynuuj zakupy</button>
               </div>
             </div>
             <div class="row">
               <div class="col-md-12">
-                <label class="text-black h4" for="coupon">Coupon</label>
-                <p>Enter your coupon code if you have one.</p>
+                <label class="text-black h4" for="coupon">Kupon</label>
+                <p>Wprowadź kod kuponu, jeśli go posiadasz.</p>
               </div>
               <div class="col-md-8 mb-3 mb-md-0">
-                <input type="text" class="form-control py-3" id="coupon" placeholder="Coupon Code">
+                <input type="text" class="form-control py-3" id="coupon" placeholder="Kod kuponu">
               </div>
               <div class="col-md-4">
-                <button class="btn btn-primary btn-sm">Apply Coupon</button>
+                <button class="btn btn-primary btn-sm">Zastosuj kupon</button>
               </div>
             </div>
           </div>
@@ -111,31 +96,30 @@
               <div class="col-md-7">
                 <div class="row">
                   <div class="col-md-12 text-right border-bottom mb-5">
-                    <h3 class="text-black 
-                      h4 text-uppercase">Cart Totals</h3>
+                    <h3 class="text-black h4 text-uppercase">Podsumowanie</h3>
                   </div>
                 </div>
                 <div class="row mb-3">
                   <div class="col-md-6">
-                    <span class="text-black">Subtotal</span>
+                    <span class="text-black">Suma częściowa</span>
                   </div>
                   <div class="col-md-6 text-right">
-                    <strong class="text-black">$230.00</strong>
+                    <strong class="text-black js-subtotal"><%= subtotal ? subtotal.toFixed(2) : '0.00' %> PLN</strong>
                   </div>
                 </div>
                 <div class="row mb-5">
                   <div class="col-md-6">
-                    <span class="text-black">Total</span>
+                    <span class="text-black">Razem</span>
                   </div>
                   <div class="col-md-6 text-right">
-                    <strong class="text-black">$230.00</strong>
+                    <strong class="text-black js-total"><%= total ? total.toFixed(2) : '0.00' %> PLN</strong>
                   </div>
                 </div>
 
                 <div class="row">
                   <div class="col-md-12">
                     <button class="btn btn-primary btn-lg py-3 btn-block" 
-                      onclick="window.location='/checkout'">Proceed To Checkout</button>
+                      onclick="window.location='/checkout'">Przejdź do kasy</button>
                   </div>
                 </div>
               </div>

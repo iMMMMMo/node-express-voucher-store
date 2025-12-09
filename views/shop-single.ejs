@@ -63,7 +63,16 @@
                   </div>
                 </div>
               </div>
-              <p><a href="/cart" class="buy-now btn btn-sm btn-primary">Add To Cart</a></p>
+              <p>
+                <button 
+                  class="buy-now btn btn-sm btn-primary js-add-to-cart"
+                  data-slug="<%= product.slug %>"
+                  data-name="<%= product.name %>"
+                  data-price="<%= parseFloat(product.finalPrice).toFixed(2) %>"
+                  data-image="<%= product.imagePath || '/images/cloth_1.jpg' %>">
+                  Dodaj do koszyka
+                </button>
+              </p>
             </div>
           </div>
         <% } else { %>

@@ -59,9 +59,16 @@ router.get('/shop-single/:slug', async (req, res) => {
 });
 
 router.get('/cart', (req, res) => {
+    const cart = req.session.cart || [];
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const total = subtotal;
+    
     res.render('cart', { 
-        title: 'Shopping Cart | Shoppers', 
-        activePage: 'cart' 
+        title: 'Koszyk | Shoppers', 
+        activePage: 'cart',
+        cart: cart,
+        subtotal: subtotal,
+        total: total
     });
 });
 
