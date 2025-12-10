@@ -751,3 +751,23 @@ a {
   width: 120px;
   border-radius: 50%;
   margin-bottom: 20px; }
+
+  .logout-btn {
+    padding: 0 !important;
+    border: none;
+    background: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.logout-text {
+    opacity: 0;
+    transition: opacity .2s;
+    font-size: 14px;
+}
+
+.logout-btn:hover .logout-text {
+    opacity: 1;
+}

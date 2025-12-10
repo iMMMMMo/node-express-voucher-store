@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement()) @map("user_id")
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  role      String
+  createdAt DateTime @default(now()) @map("createdAt")
+
+  addresses UserAddress[]
+  orders    Order[]
+
+  @@map("users")
+}
+
+model UserAddress {
+  id         Int      @id @default(autoincrement()) @map("address_id")
+  userId     Int      @map("user_id")
+  street     String
+  city       String
+  postalCode String
+  country    String
+  type       String
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("createdAt")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("useraddress")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement()) @map("product_id")
+  name        String   @map("name")
+  slug        String   @unique
+  description String?
+  basePrice   Decimal  @map("basePrice")
+  vat         Decimal  @map("VAT")
+  imagePath   String?  @map("imagePath")
+  createdAt   DateTime @default(now()) @map("createdAt")
+
+  attributes ProductAttributeValue[]
+  orderItems OrderItem[]
+  categories ProductCategory[]
+
+  @@map("product")
+}
+
+model ProductAttribute {
+  id   Int    @id @default(autoincrement()) @map("attribute_id")
+  name String
+
+  values ProductAttributeValue[]
+
+  @@map("productattribute")
+}
+
+model ProductAttributeValue {
+  id          Int    @id @default(autoincrement()) @map("value_id")
+  productId   Int    @map("product_id")
+  attributeId Int    @map("attribute_id")
+  value       String
+
+  product   Product          @relation(fields: [productId], references: [id])
+  attribute ProductAttribute @relation(fields: [attributeId], references: [id])
+
+  @@map("productattributevalue")
+}
+
+model Category {
+  id          Int     @id @default(autoincrement()) @map("category_id")
+  name        String
+  slug        String
+  description String?
+
+  products ProductCategory[]
+
+  @@map("category")
+}
+
+model ProductCategory {
+  id         Int @id @default(autoincrement()) @map("product_category_id")
+  productId  Int @map("product_id")
+  categoryId Int @map("category_id")
+
+  product  Product  @relation(fields: [productId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@map("productcategory")
+}
+
+model Order {
+  id             Int      @id @default(autoincrement()) @map("order_id")
+  userId         Int      @map("user_id")
+  totalPrice     Decimal  @map("totalPrice")
+  status         String
+  paymentMethod  String?
+  paymentStatus  String?
+  deliveryMethod String?
+  createdAt      DateTime @default(now()) @map("createdAt")
+
+  user       User        @relation(fields: [userId], references: [id])
+  orderItems OrderItem[]
+
+  @@map("order")
+}
+
+model OrderItem {
+  id                 Int     @id @default(autoincrement()) @map("order_item_id")
+  orderId            Int     @map("order_id")
+  productId          Int     @map("product_id")
+  recipientName      String? @map("recipientName")
+  dedication         String? @map("dedication")
+  quantity           Int
+  unitPrice          Decimal @map("unitPrice")
+  finalPrice         Decimal @map("finalPrice")
+  selectedAttributes Json?   @map("selectedAttributes")
+  status             String?
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("orderitem")
+}
+
+model Page {
+  id        Int      @id @default(autoincrement()) @map("page_id")
+  title     String
+  url       String   @unique
+  content   String?
+  imagePath String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("createdAt")
+
+  @@map("page")
+}
+
+model Navigation {
+  id        Int      @id @default(autoincrement()) @map("nav_id")
+  title     String
+  url       String
+  order     Int
+  isActive  Boolean  @default(true)
+  parentId  Int?     @map("parent_id")
+  createdAt DateTime @default(now()) @map("createdAt")
+
+  parent   Navigation?  @relation("Submenu", fields: [parentId], references: [id])
+  children Navigation[] @relation("Submenu")
+
+  @@map("navigation")
+}
+
+model Banner {
+  id        Int      @id @default(autoincrement()) @map("banner_id")
+  imagePath String?
+  caption   String?
+  content   String?
+  button    String?
+  link      String?
+  order     Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("createdAt")
+
+  @@map("banner")
+}
+
+model Setting {
+  key   String  @id
+  value String?
+
+  @@map("settings")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  sid       String   @unique
+  data      String?
+  expires   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sessions")
+}

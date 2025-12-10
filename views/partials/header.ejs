@@ -5,7 +5,7 @@
                 <div class="col-6 col-md-4 order-2 order-md-1 site-search-icon text-left">
                     <form action="" class="site-block-top-search">
                         <span class="icon icon-search2"></span>
-                        <input type="text" class="form-control border-0" placeholder="Search">
+                        <input type="text" class="form-control border-0" placeholder="Szukaj">
                     </form>
                 </div>
                 <div class="col-12 mb-3 mb-md-0 col-md-4 order-1 order-md-2 text-center">
@@ -36,33 +36,33 @@
                                     <span class="icon icon-shopping_cart"></span>
                                     <span class="count js-cart-count" style="display: none;">0</span>
                                 </a>
-                            </li> 
+                            </li>
                             <li class="d-inline-block d-md-none ml-md-0"><a href="#" class="site-menu-toggle js-menu-toggle"><span class="icon-menu"></span></a></li>
                         </ul>
-                    </div> 
+                    </div>
                 </div>
             </div>
         </div>
-    </div> 
+    </div>
     <nav class="site-navigation text-right text-md-center" role="navigation">
         <div class="container">
             <ul class="site-menu js-clone-nav d-none d-md-block">
                 <li class="has-children <%= activePage === 'home' ? 'active' : '' %>">
-                    <a href="/">Home</a>
+                    <a href="/">Strona główna</a>
                     <ul class="dropdown">
-                        <li><a href="#">Menu One</a></li>
-                        </ul>
-                </li>
-                <li class="has-children <%= activePage === 'about' ? 'active' : '' %>">
-                    <a href="/about">About</a>
-                    <ul class="dropdown">
-                        <li><a href="#">Menu One</a></li>
+                        <li><a href="#">Menu Pierwsze</a></li>
                     </ul>
                 </li>
-                <li class="<%= activePage === 'shop' ? 'active' : '' %>"><a href="/shop">Shop</a></li>
-                <li><a href="#">Catalogue</a></li>
-                <li><a href="#">New Arrivals</a></li>
-                <li class="<%= activePage === 'contact' ? 'active' : '' %>"><a href="/contact">Contact</a></li>
+                <li class="has-children <%= activePage === 'about' ? 'active' : '' %>">
+                    <a href="/about">O nas</a>
+                    <ul class="dropdown">
+                        <li><a href="#">Menu Pierwsze</a></li>
+                    </ul>
+                </li>
+                <li class="<%= activePage === 'shop' ? 'active' : '' %>"><a href="/shop">Sklep</a></li>
+                <li><a href="#">Katalog</a></li>
+                <li><a href="#">Nowości</a></li>
+                <li class="<%= activePage === 'contact' ? 'active' : '' %>"><a href="/contact">Kontakt</a></li>
             </ul>
         </div>
     </nav>

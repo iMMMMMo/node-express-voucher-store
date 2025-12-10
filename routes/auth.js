@@ -2,16 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const UserModel = require('../models/userModel');
+const attachUser = require('../middleware/attachUser');
 
-const attachUserToViews = (req, res, next) => {
-    res.locals.userId = req.session.userId;
-    res.locals.userName = req.session.userName;
-    res.locals.userEmail = req.session.userEmail;
-    res.locals.userRole = req.session.userRole;
-    next();
-};
-
-router.use(attachUserToViews);
+router.use(attachUser);
 
 router.get('/register', (req, res) => {
     if (req.session.userId) {

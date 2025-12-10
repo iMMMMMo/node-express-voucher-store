@@ -1,16 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const ProductModel = require('../models/productModel');
+const attachUser = require('../middleware/attachUser');
 
-const attachUserToViews = (req, res, next) => {
-    res.locals.userId = req.session.userId;
-    res.locals.userName = req.session.userName;
-    res.locals.userEmail = req.session.userEmail;
-    res.locals.userRole = req.session.userRole;
-    next();
-};
-
-router.use(attachUserToViews);
+router.use(attachUser);
 
 router.get('/', (req, res) => {
     res.render('index', { 
@@ -41,7 +34,7 @@ router.get('/shop', async (req, res) => {
 router.get('/shop-single/:slug', async (req, res) => {
     try {
         const slug = req.params.slug;
-        const product = await ProductModel.findBySlug(slug);
+        const product = await ProductModel.findProduct({ slug });
         
         if (!product) {
             return res.status(404).render('shop-single', {

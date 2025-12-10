@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const ProductModel = require('../../models/productModel');
 
-// Helper function to get cart from session
 const getCart = (req) => {
     if (!req.session.cart) {
         req.session.cart = [];
@@ -10,20 +9,17 @@ const getCart = (req) => {
     return req.session.cart;
 };
 
-// GET /api/cart - Get cart items
 router.get('/', (req, res) => {
     const cart = getCart(req);
     res.json(cart);
 });
 
-// GET /api/cart/count - Get cart items count
 router.get('/count', (req, res) => {
     const cart = getCart(req);
     const count = cart.reduce((sum, item) => sum + item.quantity, 0);
     res.json({ count });
 });
 
-// POST /api/cart/add - Add item to cart
 router.post('/add', async (req, res) => {
     try {
         const { slug, quantity = 1 } = req.body;
@@ -32,7 +28,7 @@ router.post('/add', async (req, res) => {
             return res.status(400).json({ message: 'Product slug is required' });
         }
 
-        const product = await ProductModel.findBySlug(slug);
+        const product = await ProductModel.findProduct({ slug });
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
         }
@@ -65,7 +61,6 @@ router.post('/add', async (req, res) => {
     }
 });
 
-// PUT /api/cart/update/:slug - Update item quantity
 router.put('/update/:slug', (req, res) => {
     try {
         const { slug } = req.params;
@@ -100,7 +95,6 @@ router.put('/update/:slug', (req, res) => {
     }
 });
 
-// DELETE /api/cart/remove/:slug - Remove item from cart
 router.delete('/remove/:slug', (req, res) => {
     try {
         const { slug } = req.params;
@@ -125,7 +119,6 @@ router.delete('/remove/:slug', (req, res) => {
     }
 });
 
-// DELETE /api/cart/clear - Clear entire cart
 router.delete('/clear', (req, res) => {
     req.session.cart = [];
     res.json({ message: 'Cart cleared', cart: [] });
