@@ -178,14 +178,3 @@ model Setting {
 
   @@map("settings")
 }
-
-model Session {
-  id        String   @id @default(uuid())
-  sid       String   @unique
-  data      String?
-  expires   DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("sessions")
-}
