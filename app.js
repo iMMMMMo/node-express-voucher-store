@@ -4,6 +4,7 @@ const path = require('path');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const { Pool } = require('pg');
+const adminRoutes = require("./routes/admin");
 
 dotenv.config();
 
@@ -18,6 +19,8 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use("/admin", adminRoutes);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
