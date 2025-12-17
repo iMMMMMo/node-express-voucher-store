@@ -12,11 +12,15 @@ model User {
   password  String
   name      String
   phone     String?
-  role      String
-  createdAt DateTime @default(now()) @map("createdAt")
+  role      String 
+  createdAt DateTime @default(now())
 
-  addresses UserAddress[]
-  orders    Order[]
+  addresses   UserAddress[]
+  orders      Order[]
+  pages       Page[]
+  banners     Banner[]
+  settings    Settings[]
+  navigations Navigation[]
 
   @@map("users")
 }
@@ -30,26 +34,121 @@ model UserAddress {
   country    String
   type       String
   isDefault  Boolean  @default(false)
-  createdAt  DateTime @default(now()) @map("createdAt")
+  createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
 
   @@map("useraddress")
 }
 
+model Navigation {
+  id        Int      @id @default(autoincrement()) @map("nav_id")
+  userId    Int?     @map("user_id")
+  parentId  Int?     @map("parent_id")
+  title     String
+  url       String
+  order     Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user     User?        @relation(fields: [userId], references: [id])
+  parent   Navigation? @relation("NavTree", fields: [parentId], references: [id])
+  children Navigation[] @relation("NavTree")
+
+  @@map("navigation")
+}
+
+model Page {
+  id        Int      @id @default(autoincrement()) @map("page_id")
+  userId    Int      @map("user_id")
+  title     String
+  url       String   @unique
+  content   String?
+  imagePath String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("page")
+}
+
+model Settings {
+  id     Int     @id @default(autoincrement()) @map("settings_id")
+  userId Int     @map("user_id")
+  name   String
+  value  String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("settings")
+}
+
+model Banner {
+  id        Int      @id @default(autoincrement()) @map("banner_id")
+  userId    Int      @map("user_id")
+  imagePath String?
+  caption   String?
+  content   String?
+  button    String?
+  link      String?
+  order     Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("banner")
+}
+
+model Order {
+  id             Int      @id @default(autoincrement()) @map("order_id")
+  userId         Int      @map("user_id")
+  totalPrice     Decimal  @db.Decimal(10, 2)
+  status         String
+  paymentMethod  String?
+  paymentPrice   Decimal? @db.Decimal(10, 2)
+  paymentStatus  String?
+  deliveryMethod String?
+  deliveryPrice  Decimal? @db.Decimal(10, 2)
+  createdAt      DateTime @default(now())
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@map("order")
+}
+
+model OrderItem {
+  id                 Int      @id @default(autoincrement()) @map("order_item_id")
+  orderId            Int      @map("order_id")
+  productId          Int      @map("product_id")
+  recipientName      String?
+  dedication         String?
+  quantity           Int
+  unitPrice          Decimal  @db.Decimal(10, 2)
+  VAT                Decimal? @db.Decimal(4, 2)
+  finalPrice         Decimal  @db.Decimal(10, 2)
+  selectedAttributes Json?
+  status             String?
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("orderitem")
+}
+
 model Product {
   id          Int      @id @default(autoincrement()) @map("product_id")
-  name        String   @map("name")
+  name        String
   slug        String   @unique
   description String?
-  basePrice   Decimal  @map("basePrice")
-  vat         Decimal  @map("VAT")
-  imagePath   String?  @map("imagePath")
-  createdAt   DateTime @default(now()) @map("createdAt")
+  basePrice   Decimal  @db.Decimal(10, 2)
+  VAT         Decimal  @db.Decimal(4, 2)
+  imagePath   String?
+  createdAt   DateTime @default(now())
 
   attributes ProductAttributeValue[]
   orderItems OrderItem[]
-  categories ProductCategory[]
 
   @@map("product")
 }
@@ -73,108 +172,4 @@ model ProductAttributeValue {
   attribute ProductAttribute @relation(fields: [attributeId], references: [id])
 
   @@map("productattributevalue")
-}
-
-model Category {
-  id          Int     @id @default(autoincrement()) @map("category_id")
-  name        String
-  slug        String
-  description String?
-
-  products ProductCategory[]
-
-  @@map("category")
-}
-
-model ProductCategory {
-  id         Int @id @default(autoincrement()) @map("product_category_id")
-  productId  Int @map("product_id")
-  categoryId Int @map("category_id")
-
-  product  Product  @relation(fields: [productId], references: [id])
-  category Category @relation(fields: [categoryId], references: [id])
-
-  @@map("productcategory")
-}
-
-model Order {
-  id             Int      @id @default(autoincrement()) @map("order_id")
-  userId         Int      @map("user_id")
-  totalPrice     Decimal  @map("totalPrice")
-  status         String
-  paymentMethod  String?
-  paymentStatus  String?
-  deliveryMethod String?
-  createdAt      DateTime @default(now()) @map("createdAt")
-
-  user       User        @relation(fields: [userId], references: [id])
-  orderItems OrderItem[]
-
-  @@map("order")
-}
-
-model OrderItem {
-  id                 Int     @id @default(autoincrement()) @map("order_item_id")
-  orderId            Int     @map("order_id")
-  productId          Int     @map("product_id")
-  recipientName      String? @map("recipientName")
-  dedication         String? @map("dedication")
-  quantity           Int
-  unitPrice          Decimal @map("unitPrice")
-  finalPrice         Decimal @map("finalPrice")
-  selectedAttributes Json?   @map("selectedAttributes")
-  status             String?
-
-  order   Order   @relation(fields: [orderId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-
-  @@map("orderitem")
-}
-
-model Page {
-  id        Int      @id @default(autoincrement()) @map("page_id")
-  title     String
-  url       String   @unique
-  content   String?
-  imagePath String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("createdAt")
-
-  @@map("page")
-}
-
-model Navigation {
-  id        Int      @id @default(autoincrement()) @map("nav_id")
-  title     String
-  url       String
-  order     Int
-  isActive  Boolean  @default(true)
-  parentId  Int?     @map("parent_id")
-  createdAt DateTime @default(now()) @map("createdAt")
-
-  parent   Navigation?  @relation("Submenu", fields: [parentId], references: [id])
-  children Navigation[] @relation("Submenu")
-
-  @@map("navigation")
-}
-
-model Banner {
-  id        Int      @id @default(autoincrement()) @map("banner_id")
-  imagePath String?
-  caption   String?
-  content   String?
-  button    String?
-  link      String?
-  order     Int
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("createdAt")
-
-  @@map("banner")
-}
-
-model Setting {
-  key   String  @id
-  value String?
-
-  @@map("settings")
 }
