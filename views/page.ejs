@@ -1,0 +1,37 @@
+<%- include('partials/head', { title }) %>
+<body>
+  <div class="site-wrap">
+    <%- include('partials/header', { activePage }) %>
+
+    <div class="bg-light py-3">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12 mb-0">
+            <a href="/">Home</a>
+            <span class="mx-2 mb-0">/</span>
+            <strong class="text-black"><%= page.title %></strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-section">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <h2 class="h3 mb-3 text-black"><%= page.title %></h2>
+            <% if (page.imagePath) { %>
+              <p><img src="<%= page.imagePath %>" alt="" class="img-fluid rounded"></p>
+            <% } %>
+            <% if (page.content) { %>
+              <p><%= page.content %></p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('partials/footer') %>
+  </div>
+
+  <%- include('partials/scripts') %>

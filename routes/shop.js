@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ProductModel = require('../models/productModel');
+const PageModel = require('../models/pageModel');
 const attachUser = require('../middleware/attachUser');
 
 router.use(attachUser);
@@ -67,7 +68,7 @@ router.get('/cart', (req, res) => {
     const total = subtotal;
     
     res.render('cart', { 
-        title: 'Koszyk | Shoppers', 
+        title: 'Cart | Shoppers', 
         activePage: 'cart',
         cart: cart,
         subtotal: subtotal,
@@ -83,24 +84,43 @@ router.get('/checkout', (req, res) => {
 });
 
 router.get('/thankyou', (req, res) => {
-    res.render('thankyou', { 
-        title: 'Order Confirmed | Shoppers', 
-        activePage: '' 
-    });
+    res.redirect('/p/thankyou');
 });
 
 router.get('/about', (req, res) => {
-    res.render('about', { 
-        title: 'About Us | Shoppers', 
-        activePage: 'about' 
-    });
+    res.redirect('/p/about');
 });
 
 router.get('/contact', (req, res) => {
-    res.render('contact', { 
-        title: 'Contact Us | Shoppers', 
-        activePage: 'contact' 
-    });
+    res.redirect('/p/contact');
+});
+
+router.get('/p/:url', async (req, res) => {
+    try {
+        const url = req.params.url;
+        const page = await PageModel.findActiveByUrl(url);
+
+        if (!page) {
+            return res.status(404).render('page', {
+                title: 'Page Not Found | Shoppers',
+                activePage: '',
+                page: { title: 'Page not found', content: null, imagePath: null },
+            });
+        }
+
+        res.render('page', {
+            title: `${page.title} | Shoppers`,
+            activePage: '',
+            page,
+        });
+    } catch (error) {
+        console.error('Error fetching CMS page:', error);
+        res.status(500).render('page', {
+            title: 'Error | Shoppers',
+            activePage: '',
+            page: { title: 'Error', content: null, imagePath: null },
+        });
+    }
 });
 
 module.exports = router;
