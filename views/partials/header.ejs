@@ -5,32 +5,29 @@
                 <div class="col-6 col-md-4 order-2 order-md-1 site-search-icon text-left">
                     <form action="" class="site-block-top-search">
                         <span class="icon icon-search2"></span>
-                        <input type="text" class="form-control border-0" placeholder="Szukaj">
+                        <input type="text" class="form-control border-0" placeholder="Search..">
                     </form>
                 </div>
                 <div class="col-12 mb-3 mb-md-0 col-md-4 order-1 order-md-2 text-center">
                     <div class="site-logo">
-                        <a href="/" class="js-logo-clone">Shoppers</a>
+                        <a href="/" class="js-logo-clone">Voucher Shop</a>
                     </div>
                 </div>
                 <div class="col-6 col-md-4 order-3 order-md-3 text-right">
                     <div class="site-top-icons">
                         <ul>
                             <% if (typeof userName !== 'undefined' && userName) { %>
+                                <li>
+                                    <form action="/logout" method="post" style="display: inline;">
+                                    <button type="submit" class="btn-link border-0">Logout</button></form>
+                                </li>
                                 <li class="d-none d-md-inline-block mr-2">
                                     <span class="text-black"><%= userName %></span>
                                 </li>
-                                <li>
-                                    <form action="/logout" method="post" style="display: inline;">
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary" style="border: none; background: none; padding: 0;">
-                                            <span class="icon icon-person"></span>
-                                        </button>
-                                    </form>
-                                </li>
+                                <li><a href="/p/account"><span class="icon icon-person"></span></a></li>
                             <% } else { %>
                                 <li><a href="/login"><span class="icon icon-person"></span></a></li>
                             <% } %>
-                            <li><a href="#"><span class="icon icon-heart-o"></span></a></li>
                             <li>
                                 <a href="/cart" class="site-cart">
                                     <span class="icon icon-shopping_cart"></span>
@@ -48,21 +45,14 @@
         <div class="container">
             <ul class="site-menu js-clone-nav d-none d-md-block">
                 <li class="has-children <%= activePage === 'home' ? 'active' : '' %>">
-                    <a href="/">Strona główna</a>
+                    <a href="/">Home</a>
                     <ul class="dropdown">
-                        <li><a href="#">Menu Pierwsze</a></li>
+                        <li><a href="#">First Menu</a></li>
                     </ul>
                 </li>
-                <li class="has-children <%= activePage === 'about' ? 'active' : '' %>">
-                    <a href="/about">O nas</a>
-                    <ul class="dropdown">
-                        <li><a href="#">Menu Pierwsze</a></li>
-                    </ul>
-                </li>
-                <li class="<%= activePage === 'shop' ? 'active' : '' %>"><a href="/shop">Sklep</a></li>
-                <li><a href="#">Katalog</a></li>
-                <li><a href="#">Nowości</a></li>
-                <li class="<%= activePage === 'contact' ? 'active' : '' %>"><a href="/contact">Kontakt</a></li>
+                <li><a href="/about">About Us</a></li>
+                <li class="<%= activePage === 'shop' ? 'active' : '' %>"><a href="/shop">Shop</a></li>
+                <li class="<%= activePage === 'contact' ? 'active' : '' %>"><a href="/contact">Contact</a></li>
             </ul>
         </div>
     </nav>

@@ -11,7 +11,7 @@ router.get('/register', (req, res) => {
         return res.redirect('/');
     }
     res.render('register', {
-        title: 'Rejestracja | Shoppers',
+        title: 'Register | Voucher Shop',
         activePage: '',
         errors: null,
         formData: {}
@@ -21,26 +21,26 @@ router.get('/register', (req, res) => {
 router.post('/register', [
     body('email')
         .isEmail()
-        .withMessage('Podaj poprawny adres email')
+        .withMessage('Please enter a valid email address')
         .normalizeEmail(),
     body('password')
         .isLength({ min: 6 })
-        .withMessage('Hasło musi mieć minimum 6 znaków'),
+        .withMessage('Password must be at least 6 characters long'),
     body('name')
         .trim()
         .isLength({ min: 2 })
-        .withMessage('Imię i nazwisko musi mieć minimum 2 znaki'),
+        .withMessage('Full name must be at least 2 characters long'),
     body('phone')
         .optional()
         .trim()
         .matches(/^[0-9+\-\s()]+$/)
-        .withMessage('Podaj poprawny numer telefonu')
+        .withMessage('Please enter a valid phone number')
 ], async (req, res) => {
     const errors = validationResult(req);
     
     if (!errors.isEmpty()) {
         return res.render('register', {
-            title: 'Rejestracja | Shoppers',
+            title: 'Register | Voucher Shop',
             activePage: '',
             errors: errors.array(),
             formData: req.body
@@ -53,9 +53,9 @@ router.post('/register', [
         const existingUser = await UserModel.findByEmail(email);
         if (existingUser) {
             return res.render('register', {
-                title: 'Rejestracja | Shoppers',
+                title: 'Register | Voucher Shop',
                 activePage: '',
-                errors: [{ msg: 'Użytkownik o tym adresie email już istnieje' }],
+                errors: [{ msg: 'An account with this email already exists' }],
                 formData: req.body
             });
         }
@@ -71,9 +71,9 @@ router.post('/register', [
     } catch (error) {
         console.error('Registration error:', error);
         res.render('register', {
-            title: 'Rejestracja | Shoppers',
+            title: 'Register | Voucher Shop',
             activePage: '',
-            errors: [{ msg: 'Błąd podczas rejestracji. Spróbuj ponownie.' }],
+            errors: [{ msg: 'Registration failed. Please try again.' }],
             formData: req.body
         });
     }
@@ -84,7 +84,7 @@ router.get('/login', (req, res) => {
         return res.redirect('/');
     }
     res.render('login', {
-        title: 'Logowanie | Shoppers',
+        title: 'Login | Voucher Shop',
         activePage: '',
         errors: null,
         formData: {}
@@ -94,17 +94,17 @@ router.get('/login', (req, res) => {
 router.post('/login', [
     body('email')
         .isEmail()
-        .withMessage('Podaj poprawny adres email')
+        .withMessage('Please enter a valid email address')
         .normalizeEmail(),
     body('password')
         .notEmpty()
-        .withMessage('Hasło jest wymagane')
+        .withMessage('Password is required')
 ], async (req, res) => {
     const errors = validationResult(req);
     
     if (!errors.isEmpty()) {
         return res.render('login', {
-            title: 'Logowanie | Shoppers',
+            title: 'Login | Voucher Shop',
             activePage: '',
             errors: errors.array(),
             formData: req.body
@@ -117,9 +117,9 @@ router.post('/login', [
         const user = await UserModel.findByEmail(email);
         if (!user) {
             return res.render('login', {
-                title: 'Logowanie | Shoppers',
+                title: 'Login | Voucher Shop',
                 activePage: '',
-                errors: [{ msg: 'Nieprawidłowy email lub hasło' }],
+                errors: [{ msg: 'Invalid email or password' }],
                 formData: req.body
             });
         }
@@ -127,9 +127,9 @@ router.post('/login', [
         const isValidPassword = await UserModel.verifyPassword(password, user.password);
         if (!isValidPassword) {
             return res.render('login', {
-                title: 'Logowanie | Shoppers',
+                title: 'Login | Voucher Shop',
                 activePage: '',
-                errors: [{ msg: 'Nieprawidłowy email lub hasło' }],
+                errors: [{ msg: 'Invalid email or password' }],
                 formData: req.body
             });
         }
@@ -145,9 +145,9 @@ router.post('/login', [
     } catch (error) {
         console.error('Login error:', error);
         res.render('login', {
-            title: 'Logowanie | Shoppers',
+            title: 'Login | Voucher Shop',
             activePage: '',
-            errors: [{ msg: 'Błąd podczas logowania. Spróbuj ponownie.' }],
+            errors: [{ msg: 'Login failed. Please try again.' }],
             formData: req.body
         });
     }

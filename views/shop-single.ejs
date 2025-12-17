@@ -1,4 +1,4 @@
-<%- include('partials/head', { title: 'Product Details | Shoppers' }) %>
+<%- include('partials/head', { title: 'Voucher Details | Voucher Store' }) %>
 <body>
   
   <div class="site-wrap">
@@ -20,7 +20,9 @@
         <% if (product) { %>
           <div class="row">
             <div class="col-md-6">
-              <img src="<%= product.imagePath || '/images/cloth_1.jpg' %>" alt="<%= product.name %>" class="img-fluid">
+              <figure class="voucher-detail-image mb-0">
+                <img src="<%= product.imagePath || '/images/cloth_1.jpg' %>" alt="<%= product.name %>" class="img-fluid">
+              </figure>
             </div>
             <div class="col-md-6">
               <h2 class="text-black"><%= product.name %></h2>
@@ -30,7 +32,7 @@
               <p>
                 <strong class="text-primary h4"><%= parseFloat(product.finalPrice).toFixed(2) %> PLN</strong>
                 <% if (product.VAT > 0) { %>
-                  <small class="text-muted">(w tym <%= product.VAT %>% VAT)</small>
+                  <small class="text-muted">(including <%= product.VAT %>% VAT)</small>
                 <% } %>
               </p>
               
@@ -57,7 +59,7 @@
                   <div class="input-group-prepend">
                     <button class="btn btn-outline-primary js-btn-minus" type="button">&minus;</button>
                   </div>
-                  <input type="text" class="form-control text-center" value="1" placeholder="" aria-label="Quantity" aria-describedby="button-addon1">
+                  <input type="number" class="form-control text-center" value="1" min="1" step="1" inputmode="numeric" aria-label="Quantity" aria-describedby="button-addon1">
                   <div class="input-group-append">
                     <button class="btn btn-outline-primary js-btn-plus" type="button">&plus;</button>
                   </div>
@@ -70,7 +72,7 @@
                   data-name="<%= product.name %>"
                   data-price="<%= parseFloat(product.finalPrice).toFixed(2) %>"
                   data-image="<%= product.imagePath || '/images/cloth_1.jpg' %>">
-                  Dodaj do koszyka
+                  Add to cart
                 </button>
               </p>
             </div>
@@ -87,82 +89,7 @@
       </div>
     </div>
 
-    <div class="site-section block-3 site-blocks-2 bg-light">
-      <div class="container">
-        <div class="row justify-content-center">
-          <div class="col-md-7 site-section-heading text-center pt-4">
-            <h2>Featured Products</h2>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-12">
-            <div class="nonloop-block-3 owl-carousel">
-              <div class="item">
-                <div class="block-4 text-center">
-                  <figure class="block-4-image">
-                    <img src="/images/cloth_1.jpg" alt="Image placeholder" class="img-fluid">
-                  </figure>
-                  <div class="block-4-text p-4">
-                    <h3><a href="#">Tank 
-                      Top</a></h3>
-                    <p class="mb-0">Finding perfect t-shirt</p>
-                    <p class="text-primary font-weight-bold">$50</p>
-                  </div>
-                </div>
-              </div>
-              <div class="item">
-                <div class="block-4 text-center">
-                  <figure class="block-4-image">
-                    <img src="/images/shoe_1.jpg" alt="Image placeholder" class="img-fluid">
-                  </figure>
-                  <div class="block-4-text p-4">
-                    <h3><a href="#">Corater</a></h3>
-                    <p class="mb-0">Finding perfect products</p>
-                    <p class="text-primary font-weight-bold">$50</p>
-                  </div>
-                </div>
-              </div>
-              <div class="item">
-                <div class="block-4 text-center">
-                  <figure class="block-4-image">
-                    <img src="/images/cloth_2.jpg" alt="Image placeholder" class="img-fluid">
-                  </figure>
-                  <div class="block-4-text p-4">
-                    <h3><a href="#">Polo Shirt</a></h3>
-                    <p class="mb-0">Finding perfect products</p>
-                    <p class="text-primary font-weight-bold">$50</p>
-                  </div>
-                </div>
-              </div>
-              <div class="item">
-                <div class="block-4 text-center">
-                  <figure class="block-4-image">
-                    <img src="/images/cloth_3.jpg" alt="Image placeholder" class="img-fluid">
-                  </figure>
-                  <div class="block-4-text p-4">
-                    <h3><a href="#">T-Shirt Mockup</a></h3>
-                    <p class="mb-0">Finding perfect products</p>
-                    <p class="text-primary font-weight-bold">$50</p>
-                  </div>
-                </div>
-              </div>
-              <div class="item">
-                <div class="block-4 text-center">
-                  <figure class="block-4-image">
-                    <img src="/images/shoe_1.jpg" alt="Image placeholder" class="img-fluid">
-                  </figure>
-                  <div class="block-4-text p-4">
-                    <h3><a href="#">Corater</a></h3>
-                    <p class="mb-0">Finding perfect products</p>
-                    <p class="text-primary font-weight-bold">$50</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    
 
     <%- include('partials/footer') %>
   </div>

@@ -8,7 +8,7 @@ router.use(attachUser);
 
 router.get('/', (req, res) => {
     res.render('index', { 
-        title: 'Home | Shoppers', 
+        title: 'Home | Voucher Shop', 
         activePage: 'home' 
     });
 });
@@ -17,14 +17,14 @@ router.get('/shop', async (req, res) => {
     try {
         const products = await ProductModel.findAll();
         res.render('shop', { 
-            title: 'Shop | Shoppers', 
+            title: 'Shop | Voucher Shop', 
             activePage: 'shop',
             products: products
         });
     } catch (error) {
         console.error('Error fetching products:', error);
         res.status(500).render('shop', { 
-            title: 'Shop | Shoppers', 
+            title: 'Shop | Voucher Shop', 
             activePage: 'shop',
             products: [],
             error: 'Error loading products'
@@ -39,7 +39,7 @@ router.get('/shop-single/:slug', async (req, res) => {
         
         if (!product) {
             return res.status(404).render('shop-single', {
-                title: 'Product Not Found | Shoppers',
+                title: 'Product Not Found | Voucher Shop',
                 activePage: 'shop',
                 product: null,
                 error: 'Product not found'
@@ -47,14 +47,14 @@ router.get('/shop-single/:slug', async (req, res) => {
         }
 
         res.render('shop-single', { 
-            title: `${product.name} | Shoppers`, 
+            title: `${product.name} | Voucher Shop`, 
             activePage: 'shop',
             product: product
         });
     } catch (error) {
         console.error('Error fetching product:', error);
         res.status(500).render('shop-single', {
-            title: 'Product Details | Shoppers',
+            title: 'Product Details | Voucher Shop',
             activePage: 'shop',
             product: null,
             error: 'Error loading product'
@@ -68,7 +68,7 @@ router.get('/cart', (req, res) => {
     const total = subtotal;
     
     res.render('cart', { 
-        title: 'Cart | Shoppers', 
+        title: 'Cart | Voucher Shop', 
         activePage: 'cart',
         cart: cart,
         subtotal: subtotal,
@@ -78,7 +78,7 @@ router.get('/cart', (req, res) => {
 
 router.get('/checkout', (req, res) => {
     res.render('checkout', { 
-        title: 'Checkout | Shoppers', 
+        title: 'Checkout | Voucher Shop', 
         activePage: '' 
     });
 });
@@ -102,21 +102,21 @@ router.get('/p/:url', async (req, res) => {
 
         if (!page) {
             return res.status(404).render('page', {
-                title: 'Page Not Found | Shoppers',
+                title: 'Page Not Found | Voucher Shop',
                 activePage: '',
                 page: { title: 'Page not found', content: null, imagePath: null },
             });
         }
 
         res.render('page', {
-            title: `${page.title} | Shoppers`,
+            title: `${page.title} | Voucher Shop`,
             activePage: '',
             page,
         });
     } catch (error) {
         console.error('Error fetching CMS page:', error);
         res.status(500).render('page', {
-            title: 'Error | Shoppers',
+            title: 'Error | Voucher Shop',
             activePage: '',
             page: { title: 'Error', content: null, imagePath: null },
         });

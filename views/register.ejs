@@ -1,4 +1,4 @@
-<%- include('partials/head', { title: 'Rejestracja | Shoppers' }) %>
+<%- include('partials/head', { title: 'Register | Voucher Store' }) %>
 <body>
   
   <div class="site-wrap">
@@ -7,7 +7,7 @@
     <div class="bg-light py-3">
       <div class="container">
         <div class="row">
-          <div class="col-md-12 mb-0"><a href="/">Strona główna</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Rejestracja</strong></div>
+          <div class="col-md-12 mb-0"><a href="/">Home</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Register</strong></div>
         </div>
       </div>
     </div>  
@@ -16,7 +16,7 @@
       <div class="container">
         <div class="row">
           <div class="col-md-12">
-            <h2 class="h3 mb-3 text-black">Utwórz konto</h2>
+            <h2 class="h3 mb-3 text-black">Create an account</h2>
           </div>
           <div class="col-md-7">
             <form action="/register" method="post">
@@ -40,35 +40,35 @@
 
                 <div class="form-group row">
                   <div class="col-md-12">
-                    <label for="password" class="text-black">Hasło <span class="text-danger">*</span></label>
+                    <label for="password" class="text-black">Password <span class="text-danger">*</span></label>
                     <input type="password" class="form-control" id="password" name="password" required>
-                    <small class="form-text text-muted">Minimum 6 znaków</small>
+                    <small class="form-text text-muted">Minimum 6 characters</small>
                   </div>
                 </div>
 
                 <div class="form-group row">
                   <div class="col-md-12">
-                    <label for="name" class="text-black">Imię i nazwisko <span class="text-danger">*</span></label>
+                    <label for="name" class="text-black">Full name <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="name" name="name" value="<%= formData.name || '' %>" required>
                   </div>
                 </div>
 
                 <div class="form-group row">
                   <div class="col-md-12">
-                    <label for="phone" class="text-black">Numer telefonu</label>
+                    <label for="phone" class="text-black">Phone number</label>
                     <input type="tel" class="form-control" id="phone" name="phone" value="<%= formData.phone || '' %>">
                   </div>
                 </div>
 
                 <div class="form-group row">
                   <div class="col-lg-12">
-                    <input type="submit" class="btn btn-primary btn-lg btn-block" value="Zarejestruj się">
+                    <input type="submit" class="btn btn-primary btn-lg btn-block" value="Create account">
                   </div>
                 </div>
 
                 <div class="form-group row">
                   <div class="col-lg-12 text-center">
-                    <p class="mb-0">Masz już konto? <a href="/login">Zaloguj się</a></p>
+                    <p class="mb-0">Already have an account? <a href="/login">Sign in</a></p>
                   </div>
                 </div>
               </div>

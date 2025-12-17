@@ -134,15 +134,19 @@ jQuery(document).ready(function($) {
 	var sitePlusMinus = function() {
 		$('.js-btn-minus').on('click', function(e){
 			e.preventDefault();
-			if ( $(this).closest('.input-group').find('.form-control').val() != 0  ) {
-				$(this).closest('.input-group').find('.form-control').val(parseInt($(this).closest('.input-group').find('.form-control').val()) - 1);
-			} else {
-				$(this).closest('.input-group').find('.form-control').val(parseInt(0));
-			}
+			var $input = $(this).closest('.input-group').find('.form-control');
+			var current = parseInt($input.val(), 10);
+			if (isNaN(current)) current = 1;
+			var next = current - 1;
+			if (next < 1) next = 1;
+			$input.val(next);
 		});
 		$('.js-btn-plus').on('click', function(e){
 			e.preventDefault();
-			$(this).closest('.input-group').find('.form-control').val(parseInt($(this).closest('.input-group').find('.form-control').val()) + 1);
+			var $input = $(this).closest('.input-group').find('.form-control');
+			var current = parseInt($input.val(), 10);
+			if (isNaN(current) || current < 1) current = 1;
+			$input.val(current + 1);
 		});
 	};
 	sitePlusMinus();

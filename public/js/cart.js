@@ -1,6 +1,12 @@
 (function() {
     'use strict';
 
+    function sanitizeQuantity(value) {
+        const parsed = parseInt(value, 10);
+        if (!Number.isFinite(parsed) || isNaN(parsed)) return 1;
+        return Math.max(1, parsed);
+    }
+
     function updateCartCount() {
         fetch('/api/cart/count')
             .then(response => response.json())
@@ -25,18 +31,18 @@
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ slug, quantity })
+            body: JSON.stringify({ slug, quantity: sanitizeQuantity(quantity) })
         })
         .then(response => response.json())
         .then(data => {
             if (data.message) {
                 updateCartCount();
-                alert('Produkt dodany do koszyka!');
+                // alert('Produkt dodany do koszyka!');
             }
         })
         .catch(error => {
             console.error('Error adding to cart:', error);
-            alert('Błąd podczas dodawania produktu do koszyka.');
+            // alert('Błąd podczas dodawania produktu do koszyka.');
         });
     }
 
@@ -46,7 +52,7 @@
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ quantity })
+            body: JSON.stringify({ quantity: sanitizeQuantity(quantity) })
         })
         .then(response => response.json())
         .then(data => {
@@ -57,14 +63,14 @@
         })
         .catch(error => {
             console.error('Error updating cart:', error);
-            alert('Błąd podczas aktualizacji koszyka.');
+            // alert('Błąd podczas aktualizacji koszyka.');
         });
     }
 
     function removeFromCart(slug) {
-        if (!confirm('Czy na pewno chcesz usunąć ten produkt z koszyka?')) {
-            return;
-        }
+        // if (!confirm('Czy na pewno chcesz usunąć ten produkt z koszyka?')) {
+        //     return;
+        // }
 
         fetch(`/api/cart/remove/${slug}`, {
             method: 'DELETE'
@@ -82,7 +88,7 @@
         })
         .catch(error => {
             console.error('Error removing from cart:', error);
-            alert('Błąd podczas usuwania produktu z koszyka.');
+            // alert('Błąd podczas usuwania produktu z koszyka.');
         });
     }
 
@@ -95,7 +101,7 @@
                 const slug = this.getAttribute('data-slug');
                 const container = this.closest('.col-md-6, .block-4-text, .site-section');
                 const quantityInput = container ? container.querySelector('.form-control.text-center') : document.querySelector('.form-control.text-center');
-                const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+                const quantity = sanitizeQuantity(quantityInput ? quantityInput.value : 1);
                 addToCart(slug, quantity);
             });
         });
@@ -106,7 +112,7 @@
                 const slug = this.getAttribute('data-slug');
                 const input = document.querySelector(`.js-cart-quantity[data-slug="${slug}"]`);
                 if (input) {
-                    const newQuantity = parseInt(input.value) + 1;
+                    const newQuantity = sanitizeQuantity(input.value) + 1;
                     updateCartItem(slug, newQuantity);
                 }
             });
@@ -118,7 +124,7 @@
                 const slug = this.getAttribute('data-slug');
                 const input = document.querySelector(`.js-cart-quantity[data-slug="${slug}"]`);
                 if (input) {
-                    const currentQuantity = parseInt(input.value);
+                    const currentQuantity = sanitizeQuantity(input.value);
                     if (currentQuantity > 1) {
                         const newQuantity = currentQuantity - 1;
                         updateCartItem(slug, newQuantity);

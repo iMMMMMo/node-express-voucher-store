@@ -9,6 +9,14 @@ const getCart = (req) => {
     return req.session.cart;
 };
 
+const parseQuantity = (value) => {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isFinite(parsed) || Number.isNaN(parsed)) {
+        return null;
+    }
+    return parsed;
+};
+
 router.get('/', (req, res) => {
     const cart = getCart(req);
     res.json(cart);
@@ -33,11 +41,16 @@ router.post('/add', async (req, res) => {
             return res.status(404).json({ message: 'Product not found' });
         }
 
+        const qty = parseQuantity(quantity);
+        if (qty === null || qty < 1) {
+            return res.status(400).json({ message: 'Quantity must be an integer of at least 1' });
+        }
+
         const cart = getCart(req);
         const existingItemIndex = cart.findIndex(item => item.slug === slug);
 
         if (existingItemIndex > -1) {
-            cart[existingItemIndex].quantity += parseInt(quantity);
+            cart[existingItemIndex].quantity += qty;
         } else {
             cart.push({
                 slug: product.slug,
@@ -45,7 +58,7 @@ router.post('/add', async (req, res) => {
                 name: product.name,
                 price: parseFloat(product.finalPrice),
                 imagePath: product.imagePath || '/images/cloth_1.jpg',
-                quantity: parseInt(quantity)
+                quantity: qty
             });
         }
 
@@ -66,8 +79,9 @@ router.put('/update/:slug', (req, res) => {
         const { slug } = req.params;
         const { quantity } = req.body;
 
-        if (!quantity || quantity < 0) {
-            return res.status(400).json({ message: 'Valid quantity is required' });
+        const qty = parseQuantity(quantity);
+        if (qty === null || qty < 0) {
+            return res.status(400).json({ message: 'Quantity must be an integer (0 to remove, or 1+ to keep)' });
         }
 
         const cart = getCart(req);
@@ -77,10 +91,10 @@ router.put('/update/:slug', (req, res) => {
             return res.status(404).json({ message: 'Item not found in cart' });
         }
 
-        if (quantity === 0) {
+        if (qty === 0) {
             cart.splice(itemIndex, 1);
         } else {
-            cart[itemIndex].quantity = parseInt(quantity);
+            cart[itemIndex].quantity = Math.max(1, qty);
         }
 
         const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
