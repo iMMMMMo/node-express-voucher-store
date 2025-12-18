@@ -126,7 +126,7 @@ model OrderItem {
   dedication         String?
   quantity           Int
   unitPrice          Decimal  @db.Decimal(10, 2)
-  VAT                Decimal? @db.Decimal(4, 2)
+  vat                Decimal? @map("VAT") @db.Decimal(4, 2)
   finalPrice         Decimal  @db.Decimal(10, 2)
   selectedAttributes Json?
   status             String?
@@ -143,7 +143,7 @@ model Product {
   slug        String   @unique
   description String?
   basePrice   Decimal  @db.Decimal(10, 2)
-  VAT         Decimal  @db.Decimal(4, 2)
+  vat         Decimal  @map("VAT") @db.Decimal(4, 2)
   imagePath   String?
   createdAt   DateTime @default(now())
 
