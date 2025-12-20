@@ -54,7 +54,7 @@ router.post('/add', async (req, res) => {
         } else {
             cart.push({
                 slug: product.slug,
-                product_id: product.product_id,
+                product_id: product.id,
                 name: product.name,
                 price: parseFloat(product.finalPrice),
                 imagePath: product.imagePath || '/images/cloth_1.jpg',

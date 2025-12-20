@@ -1,0 +1,40 @@
+<%- include('partials/head', { title: 'Thank you | Voucher Shop' }) %>
+<body>
+  <div class="site-wrap">
+    <%- include('partials/header', { activePage: '' }) %>
+
+    <div class="bg-light py-3">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12 mb-0">
+            <a href="/">Home</a> <span class="mx-2 mb-0">/</span>
+            <strong class="text-black">Thank you</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-section">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-md-8 text-center">
+            <h2 class="text-black">Thank you for your order!</h2>
+            <% if (orderId) { %>
+              <p class="mb-4">Your order number is <strong>#<%= orderId %></strong>.</p>
+            <% } else { %>
+              <p class="mb-4">Your order has been placed.</p>
+            <% } %>
+
+            <p class="mb-0">
+              <a href="/shop" class="btn btn-primary btn-sm">Continue shopping</a>
+              <a href="/cart" class="btn btn-outline-primary btn-sm ml-2">View cart</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('partials/footer') %>
+  </div>
+
+  <%- include('partials/scripts') %>

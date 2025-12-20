@@ -62,7 +62,7 @@ router.post('/register', [
 
         const user = await UserModel.create(email, password, name, phone || null);
         
-        req.session.userId = user.user_id;
+        req.session.userId = user.id;
         req.session.userEmail = user.email;
         req.session.userName = user.name;
         req.session.userRole = user.role;
@@ -134,7 +134,7 @@ router.post('/login', [
             });
         }
 
-        req.session.userId = user.user_id;
+        req.session.userId = user.id;
         req.session.userEmail = user.email;
         req.session.userName = user.name;
         req.session.userRole = user.role;

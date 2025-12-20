@@ -14,6 +14,16 @@
 
     <div class="site-section">
       <div class="container">
+        <% if (notice) { %>
+          <div class="row mb-4">
+            <div class="col-md-12">
+              <div class="border p-4 rounded" role="alert">
+                <strong class="text-black">Info:</strong> <%= notice %>
+              </div>
+            </div>
+          </div>
+        <% } %>
+
         <div class="row mb-5">
           <div class="col-md-12">
             <div class="site-blocks-table">
@@ -38,7 +48,7 @@
                         <td class="product-name">
                           <h2 class="h5 text-black"><%= item.name %></h2>
                         </td>
-                        <td><%= item.price.toFixed(2) %> PLN</td>
+                        <td><%= (Number(item.price) || 0).toFixed(2) %> PLN</td>
                         <td>
                           <div class="input-group mb-3 m-auto" style="max-width: 120px;">
                             <div class="input-group-prepend">
@@ -50,7 +60,7 @@
                             </div>
                           </div>
                         </td>
-                        <td class="js-item-total"><%= (item.price * item.quantity).toFixed(2) %> PLN</td>
+                        <td class="js-item-total"><%= ((Number(item.price) || 0) * (Number(item.quantity) || 0)).toFixed(2) %> PLN</td>
                         <td><button class="btn btn-primary btn-sm js-cart-remove" data-slug="<%= item.slug %>">X</button></td>
                       </tr>
                     <% }); %>
@@ -87,14 +97,6 @@
                     <h3 class="text-black h4 text-uppercase">Summary</h3>
                   </div>
                 </div>
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <span class="text-black">Subtotal</span>
-                  </div>
-                  <div class="col-md-6 text-right">
-                    <strong class="text-black js-subtotal"><%= subtotal ? subtotal.toFixed(2) : '0.00' %> PLN</strong>
-                  </div>
-                </div>
                 <div class="row mb-5">
                   <div class="col-md-6">
                     <span class="text-black">Total</span>
@@ -104,12 +106,20 @@
                   </div>
                 </div>
 
-                <div class="row">
-                  <div class="col-md-12">
-                    <button class="btn btn-primary btn-lg py-3 btn-block" 
-                      onclick="window.location='/checkout'">Proceed to Checkout</button>
+                <% if (cart && cart.length > 0) { %>
+                  <div class="row">
+                    <div class="col-md-12">
+                      <button class="btn btn-primary btn-lg py-3 btn-block" onclick="window.location='/checkout'">Proceed to Checkout</button>
+                    </div>
                   </div>
-                </div>
+                <% } else { %>
+                  <div class="row">
+                    <div class="col-md-12">
+                      <button class="btn btn-primary btn-lg py-3 btn-block" disabled>Proceed to Checkout</button>
+                      <small class="text-muted d-block mt-2">Add at least one item to your cart to continue.</small>
+                    </div>
+                  </div>
+                <% } %>
               </div>
             </div>
           </div>

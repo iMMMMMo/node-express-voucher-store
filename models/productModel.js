@@ -1,5 +1,13 @@
 const prisma = require("../prisma/prismaClient");
 
+const toNumber = (value) => {
+    if (value === null || typeof value === 'undefined') return null;
+    if (typeof value === 'number') return value;
+    const asString = typeof value === 'string' ? value : value.toString();
+    const parsed = Number.parseFloat(asString);
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
 const ProductModel = {
     findAll: async () => {
         const products = await prisma.product.findMany({
@@ -8,7 +16,10 @@ const ProductModel = {
 
         return products.map(p => ({
             ...p,
-            finalPrice: Number(p.basePrice) * (1 + Number(p.vat) / 100)
+            basePrice: toNumber(p.basePrice),
+            vat: toNumber(p.vat),
+            VAT: toNumber(p.vat),
+            finalPrice: (toNumber(p.basePrice) ?? 0) * (1 + ((toNumber(p.vat) ?? 0) / 100))
         }));
     },
 
@@ -26,7 +37,9 @@ const ProductModel = {
 
         if (!product) return null;
 
-        const finalPrice = Number(product.basePrice) * (1 + Number(product.vat) / 100);
+        const basePrice = toNumber(product.basePrice) ?? 0;
+        const vat = toNumber(product.vat) ?? 0;
+        const finalPrice = basePrice * (1 + vat / 100);
 
         const attributes = {};
 
@@ -45,6 +58,9 @@ const ProductModel = {
 
         return {
             ...product,
+            basePrice,
+            vat,
+            VAT: vat,
             finalPrice,
             attributes
         };
