@@ -4,7 +4,6 @@ const path = require('path');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const { Pool } = require('pg');
-const adminRoutes = require("./routes/admin");
 
 dotenv.config();
 
@@ -19,8 +18,6 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
-
-app.use("/admin", adminRoutes);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -37,11 +34,13 @@ app.use(session({
     }),
 }));
 
+const adminRoutes = require("./routes/admin");
 const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
 const productApiRoutes = require('./routes/api/products');
 const cartApiRoutes = require('./routes/api/cart');
 
+app.use("/admin", adminRoutes);
 app.use('/', shopRoutes);
 app.use('/', authRoutes);
 app.use('/api/products', productApiRoutes);
