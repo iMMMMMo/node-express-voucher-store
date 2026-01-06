@@ -1,0 +1,78 @@
+<% const products = (viewData && viewData.products) ? viewData.products : []; %>
+
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <h3 class="mb-0">Products</h3>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+          <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Products</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+    <% if (viewData && viewData.error) { %>
+      <div class="alert alert-danger" role="alert"><%= viewData.error %></div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Products list</h3>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped mb-0">
+            <thead>
+              <tr>
+                <th style="width: 80px;">ID</th>
+                <th>Name</th>
+                <th>Slug</th>
+                <th>Description</th>
+                <th style="width: 220px;">Image path</th>
+                <th style="width: 140px;">Base price</th>
+                <th style="width: 100px;">VAT</th>
+                <th style="width: 160px;">Final price</th>
+                <th style="width: 180px;">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!products.length) { %>
+                <tr>
+                  <td colspan="9" class="text-center text-muted py-4">No products found.</td>
+                </tr>
+              <% } %>
+
+              <% products.forEach((product) => { %>
+                <tr>
+                  <td><%= product.id %></td>
+                  <td><%= product.name %></td>
+                  <td>
+                    <a href="/shop-single/<%= product.slug %>" target="_blank" rel="noopener noreferrer"><%= product.slug %></a>
+                  </td>
+                  <td><%= product.description || '' %></td>
+                  <td>
+                    <% if (product.imagePath) { %>
+                      <a href="<%= product.imagePath %>" target="_blank" rel="noopener noreferrer"><%= product.imagePath %></a>
+                    <% } %>
+                  </td>
+                  <td><%= (typeof product.basePrice === 'number') ? product.basePrice.toFixed(2) : '' %></td>
+                  <td><%= (typeof product.vat === 'number') ? product.vat.toFixed(2) + '%' : '' %></td>
+                  <td><%= (typeof product.finalPrice === 'number') ? product.finalPrice.toFixed(2) : '' %></td>
+                  <td><%= product.createdAt ? new Date(product.createdAt).toLocaleString() : '' %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
