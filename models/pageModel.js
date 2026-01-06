@@ -7,6 +7,8 @@ const PageModel = {
         id: true,
         title: true,
         url: true,
+        content: true,
+        imagePath: true,
         createdAt: true,
         userId: true,
       },
