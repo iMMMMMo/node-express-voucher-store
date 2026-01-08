@@ -1,0 +1,229 @@
+<%
+  const mode = (viewData && viewData.mode) ? viewData.mode : 'create';
+  const errors = (viewData && viewData.errors) ? viewData.errors : null;
+  const formData = (viewData && viewData.formData) ? viewData.formData : {};
+  const page = (viewData && viewData.page) ? viewData.page : null;
+  const availableImages = (viewData && viewData.availableImages) ? viewData.availableImages : [];
+
+  const isEdit = mode === 'edit';
+  const action = isEdit && page && page.id ? `/admin/pages/${page.id}` : '/admin/pages';
+  const heading = isEdit ? 'Edit page' : 'New page';
+%>
+
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <h3 class="mb-0"><%= heading %></h3>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+          <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="/admin/pages">Pages</a></li>
+          <li class="breadcrumb-item active" aria-current="page"><%= heading %></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+    <% if (errors && errors.length) { %>
+      <div class="alert alert-danger" role="alert">
+        <ul class="mb-0">
+          <% errors.forEach((e) => { %>
+            <li><%= e.msg %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><%= heading %></h3>
+      </div>
+
+      <form method="post" action="<%= action %>" enctype="multipart/form-data">
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label" for="title">Title</label>
+            <input
+              class="form-control"
+              type="text"
+              id="title"
+              name="title"
+              value="<%= (formData.title ?? '') %>"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="url">URL (slug)</label>
+            <input
+              class="form-control"
+              type="text"
+              id="url"
+              name="url"
+              value="<%= (formData.url ?? '') %>"
+              required
+            />
+            <div class="form-text">Example: <code>about-us</code> (lowercase letters, numbers, hyphens)</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="content">Content</label>
+            <textarea class="form-control" id="content" name="content" rows="6"><%= (formData.content ?? '') %></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="image">Image</label>
+            <input class="form-control" type="file" id="image" name="image" accept="image/*" />
+
+            <div class="form-text">Or select an already uploaded image:</div>
+
+            <div class="mt-2">
+              <% if (!availableImages.length) { %>
+                <div class="text-muted">No uploaded images found in <code>public/images/pages</code>.</div>
+              <% } else { %>
+                <div class="row g-2">
+                  <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                    <label class="w-100">
+                      <input
+                        class="form-check-input visually-hidden"
+                        type="radio"
+                        name="existingImage"
+                        id="existingImage_none"
+                        value=""
+                        <%= (String(formData.existingImage ?? '') === '') ? 'checked' : '' %>
+                      />
+
+                      <div class="image-tile border rounded p-2" data-image-tile>
+                        <div
+                          class="image-tile-placeholder border rounded w-100 d-flex align-items-center justify-content-center text-muted"
+                          style="aspect-ratio: 1 / 1;"
+                        >
+                          No image
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+
+                  <% availableImages.forEach((img) => { %>
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                      <label class="w-100">
+                        <input
+                          class="form-check-input visually-hidden"
+                          type="radio"
+                          name="existingImage"
+                          id="existingImage_<%= img.name.replace(/[^a-zA-Z0-9_-]/g, '_') %>"
+                          value="<%= img.name %>"
+                          <%= (String(formData.existingImage ?? '') === String(img.name)) ? 'checked' : '' %>
+                        />
+
+                        <div class="image-tile border rounded p-2" data-image-tile>
+                          <img
+                            src="<%= img.webPath %>"
+                            alt="Selected image"
+                            class="img-thumbnail w-100"
+                            style="object-fit: cover; aspect-ratio: 1 / 1;"
+                          />
+                        </div>
+                      </label>
+                    </div>
+                  <% }) %>
+                </div>
+              <% } %>
+            </div>
+
+            <% if (isEdit && page && page.imagePath) { %>
+              <div class="form-text">
+                Current: <a href="<%= page.imagePath %>" target="_blank" rel="noopener noreferrer"><%= page.imagePath %></a>
+              </div>
+            <% } %>
+          </div>
+
+          <% if (isEdit && page && page.createdAt) { %>
+            <div class="mb-3">
+              <label class="form-label">Created</label>
+              <div class="form-control-plaintext"><%= new Date(page.createdAt).toLocaleString() %></div>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="card-footer d-flex gap-2">
+          <button type="submit" class="btn btn-primary"><%= isEdit ? 'Save changes' : 'Create page' %></button>
+          <a href="/admin/pages" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<% if (!isEdit) { %>
+  <script>
+    (function () {
+      const titleInput = document.getElementById('title');
+      const urlInput = document.getElementById('url');
+      if (!titleInput || !urlInput) return;
+
+      const normalizePolish = (text) => {
+        const map = {
+          'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ż': 'z', 'ź': 'z',
+          'Ą': 'a', 'Ć': 'c', 'Ę': 'e', 'Ł': 'l', 'Ń': 'n', 'Ó': 'o', 'Ś': 's', 'Ż': 'z', 'Ź': 'z'
+        };
+        return (text || '').split('').map((ch) => map[ch] ?? ch).join('');
+      };
+
+      const toSlug = (text) => {
+        const normalized = normalizePolish(text).toLowerCase();
+        return normalized
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .replace(/-+/g, '-');
+      };
+
+      let urlTouched = false;
+
+      urlInput.addEventListener('input', () => {
+        urlTouched = urlInput.value.trim().length > 0;
+      });
+
+      titleInput.addEventListener('input', () => {
+        if (urlTouched) return;
+        urlInput.value = toSlug(titleInput.value);
+      });
+    })();
+  </script>
+<% } %>
+
+<style>
+  .image-tile {
+    cursor: pointer;
+    user-select: none;
+  }
+</style>
+
+<script>
+  (function () {
+    const inputs = document.querySelectorAll('input[name="existingImage"]');
+    if (!inputs.length) return;
+
+    const updateTiles = () => {
+      inputs.forEach((input) => {
+        const label = input.closest('label');
+        const tile = label ? label.querySelector('[data-image-tile]') : null;
+        if (!tile) return;
+
+        if (input.checked) {
+          tile.classList.add('border-primary', 'border-2', 'bg-body-tertiary');
+        } else {
+          tile.classList.remove('border-primary', 'border-2', 'bg-body-tertiary');
+        }
+      });
+    };
+
+    inputs.forEach((input) => input.addEventListener('change', updateTiles));
+    updateTiles();
+  })();
+</script>
