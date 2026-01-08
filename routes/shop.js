@@ -7,6 +7,84 @@ const authRequired = require('../middleware/authRequired');
 const prisma = require('../prisma/prismaClient');
 const { Prisma } = require('@prisma/client');
 
+const toNumber = (value) => {
+    if (value === null || typeof value === 'undefined') return null;
+    if (typeof value === 'number') return value;
+    const asString = typeof value === 'string' ? value : value.toString();
+    const parsed = Number.parseFloat(asString);
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
+const normalizeSelectedAttributeValueIds = (value) => {
+    const arr = Array.isArray(value) ? value : (value ? [value] : []);
+    const parsed = arr
+        .map((v) => Number.parseInt(v, 10))
+        .filter((v) => Number.isFinite(v) && v > 0);
+    return Array.from(new Set(parsed)).sort((a, b) => a - b);
+};
+
+const repairCartPrices = async (cart) => {
+    if (!Array.isArray(cart) || !cart.length) return cart;
+
+    const slugs = cart.map(i => i.slug).filter(Boolean);
+    const products = await prisma.product.findMany({
+        where: { slug: { in: slugs } },
+        select: { id: true, slug: true, basePrice: true, vat: true, imagePath: true, name: true }
+    });
+    const bySlug = new Map(products.map(p => [p.slug, p]));
+
+    const allSelectedIds = cart
+        .flatMap((item) => normalizeSelectedAttributeValueIds(item.selectedAttributeValueIds))
+        .filter(Boolean);
+    const uniqueSelectedIds = Array.from(new Set(allSelectedIds));
+
+    const selectedRows = uniqueSelectedIds.length
+        ? await prisma.productAttributeValue.findMany({
+            where: { id: { in: uniqueSelectedIds } },
+            include: { attribute: true }
+        })
+        : [];
+    const selectedById = new Map(selectedRows.map(r => [r.id, r]));
+
+    cart.forEach((item) => {
+        const p = bySlug.get(item.slug);
+        if (!p) return;
+
+        const base = toNumber(p.basePrice) ?? 0;
+        const vat = toNumber(p.vat) ?? 0;
+        const vatFactor = 1 + vat / 100;
+
+        const ids = normalizeSelectedAttributeValueIds(item.selectedAttributeValueIds);
+        const selectedAttributes = ids
+            .map((id) => {
+                const row = selectedById.get(id);
+                if (!row || row.productId !== p.id) return null;
+                return {
+                    attributeId: row.attributeId,
+                    attributeName: row.attribute?.name,
+                    valueId: row.id,
+                    value: row.value,
+                    priceDelta: toNumber(row.priceDelta) ?? 0,
+                };
+            })
+            .filter(Boolean);
+
+        item.selectedAttributes = selectedAttributes.length ? selectedAttributes : null;
+
+        const deltaGrossSum = selectedAttributes.reduce((sum, row) => sum + (Number(row.priceDelta) || 0), 0);
+
+        const deltaNetSum = vatFactor > 0 ? (deltaGrossSum / vatFactor) : deltaGrossSum;
+        const unitBase = base + deltaNetSum;
+        const unitFinal = unitBase * vatFactor;
+
+        item.price = Number.isFinite(unitFinal) ? unitFinal : 0;
+        if (!item.name) item.name = p.name;
+        if (!item.imagePath) item.imagePath = p.imagePath || '/images/cloth_1.jpg';
+    });
+
+    return cart;
+};
+
 router.use(attachUser);
 
 router.get('/', (req, res) => {
@@ -72,41 +150,12 @@ router.get('/cart', async (req, res) => {
         ? 'Cannot proceed to checkout because your cart is empty. Add at least one product to continue.'
         : null;
 
-    const needsRepair = cart.some(item => {
-        const price = Number(item.price);
-        return !Number.isFinite(price);
-    });
+    const needsRepair = cart.some(item => !Number.isFinite(Number(item.price)))
+        || cart.some(item => Array.isArray(item.selectedAttributeValueIds) && item.selectedAttributeValueIds.length);
 
     if (cart.length && needsRepair) {
         try {
-            const slugs = cart.map(i => i.slug).filter(Boolean);
-            const products = await prisma.product.findMany({
-                where: { slug: { in: slugs } },
-                select: { slug: true, basePrice: true, vat: true, imagePath: true, name: true }
-            });
-            const bySlug = new Map(products.map(p => [p.slug, p]));
-
-            cart.forEach((item) => {
-                const p = bySlug.get(item.slug);
-                if (!p) return;
-
-                const base = Number.parseFloat(p.basePrice?.toString?.() ?? String(p.basePrice));
-                const vat = Number.parseFloat(p.vat?.toString?.() ?? String(p.vat));
-                const safeBase = Number.isFinite(base) ? base : 0;
-                const safeVat = Number.isFinite(vat) ? vat : 0;
-                const finalPrice = safeBase * (1 + safeVat / 100);
-
-                if (!Number.isFinite(Number(item.price))) {
-                    item.price = Number.isFinite(finalPrice) ? finalPrice : 0;
-                }
-                if (!item.name) {
-                    item.name = p.name;
-                }
-                if (!item.imagePath) {
-                    item.imagePath = p.imagePath || '/images/cloth_1.jpg';
-                }
-            });
-
+            await repairCartPrices(cart);
             req.session.cart = cart;
         } catch (error) {
             console.error('Error repairing cart prices:', error);
@@ -130,19 +179,28 @@ router.get('/checkout', authRequired, (req, res) => {
         return res.redirect('/cart?reason=empty');
     }
 
-    const total = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.quantity) || 0)), 0);
-
-    res.render('checkout', {
-        title: 'Checkout | Voucher Shop',
-        activePage: '',
-        cart,
-        total,
-        errors: null,
-        formData: {
-            paymentMethod: 'BANK_TRANSFER',
-            deliveryMethod: 'E_DELIVERY'
+    (async () => {
+        try {
+            await repairCartPrices(cart);
+            req.session.cart = cart;
+        } catch (error) {
+            console.error('Error repairing checkout cart prices:', error);
         }
-    });
+
+        const total = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.quantity) || 0)), 0);
+
+        res.render('checkout', {
+            title: 'Checkout | Voucher Shop',
+            activePage: '',
+            cart,
+            total,
+            errors: null,
+            formData: {
+                paymentMethod: 'BANK_TRANSFER',
+                deliveryMethod: 'E_DELIVERY'
+            }
+        });
+    })();
 });
 
 router.post('/checkout', authRequired, async (req, res) => {
@@ -164,12 +222,12 @@ router.post('/checkout', authRequired, async (req, res) => {
         errors.push({ msg: 'Please select a valid delivery method.' });
     }
 
-    const itemsTotal = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.quantity) || 0)), 0);
     const deliveryPriceNumber = deliveryMethod === 'COURIER' ? 15.0 : 0.0;
     const paymentPriceNumber = 0.0;
-    const total = itemsTotal + deliveryPriceNumber + paymentPriceNumber;
 
     if (errors.length) {
+        const total = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.quantity) || 0)), 0)
+            + deliveryPriceNumber + paymentPriceNumber;
         return res.status(400).render('checkout', {
             title: 'Checkout | Voucher Shop',
             activePage: '',
@@ -181,15 +239,30 @@ router.post('/checkout', authRequired, async (req, res) => {
     }
 
     try {
-        const slugs = cart.map(i => i.slug);
+        const slugs = cart.map(i => i.slug).filter(Boolean);
         const products = await prisma.product.findMany({
             where: { slug: { in: slugs } },
             select: { id: true, slug: true, basePrice: true, vat: true }
         });
         const bySlug = new Map(products.map(p => [p.slug, p]));
 
+        const allSelectedIds = cart
+            .flatMap((item) => normalizeSelectedAttributeValueIds(item.selectedAttributeValueIds))
+            .filter(Boolean);
+        const uniqueSelectedIds = Array.from(new Set(allSelectedIds));
+
+        const selectedRows = uniqueSelectedIds.length
+            ? await prisma.productAttributeValue.findMany({
+                where: { id: { in: uniqueSelectedIds } },
+                include: { attribute: true }
+            })
+            : [];
+        const selectedById = new Map(selectedRows.map(r => [r.id, r]));
+
         for (const item of cart) {
             if (!bySlug.has(item.slug)) {
+                const total = cart.reduce((sum, i) => sum + ((Number(i.price) || 0) * (Number(i.quantity) || 0)), 0)
+                    + deliveryPriceNumber + paymentPriceNumber;
                 return res.status(400).render('checkout', {
                     title: 'Checkout | Voucher Shop',
                     activePage: '',
@@ -200,6 +273,64 @@ router.post('/checkout', authRequired, async (req, res) => {
                 });
             }
         }
+
+        const pricedItems = cart.map((item) => {
+            const p = bySlug.get(item.slug);
+            const qty = Math.max(1, Number.parseInt(item.quantity, 10) || 1);
+
+            const base = toNumber(p.basePrice) ?? 0;
+            const vat = toNumber(p.vat) ?? 0;
+            const vatFactor = 1 + vat / 100;
+
+            const ids = normalizeSelectedAttributeValueIds(item.selectedAttributeValueIds);
+            const selectedAttributes = ids.map((id) => {
+                const row = selectedById.get(id);
+                if (!row || row.productId !== p.id) return null;
+                return {
+                    attributeId: row.attributeId,
+                    attributeName: row.attribute?.name,
+                    valueId: row.id,
+                    value: row.value,
+                    priceDelta: toNumber(row.priceDelta) ?? 0,
+                };
+            }).filter(Boolean);
+
+            if (ids.length && selectedAttributes.length !== ids.length) {
+                return { error: `Invalid attribute selection for product "${item.slug}".` };
+            }
+
+            const deltaGrossSum = selectedAttributes.reduce((sum, row) => sum + (Number(row.priceDelta) || 0), 0);
+            const deltaNetSum = vatFactor > 0 ? (deltaGrossSum / vatFactor) : deltaGrossSum;
+            const unitBase = base + deltaNetSum;
+            const unitFinal = unitBase * vatFactor;
+            const lineFinal = unitFinal * qty;
+
+            return {
+                productId: p.id,
+                qty,
+                unitBase,
+                vat,
+                lineFinal,
+                selectedAttributes,
+            };
+        });
+
+        const invalid = pricedItems.find((x) => x && x.error);
+        if (invalid) {
+            const total = cart.reduce((sum, i) => sum + ((Number(i.price) || 0) * (Number(i.quantity) || 0)), 0)
+                + deliveryPriceNumber + paymentPriceNumber;
+            return res.status(400).render('checkout', {
+                title: 'Checkout | Voucher Shop',
+                activePage: '',
+                cart,
+                total,
+                errors: [{ msg: invalid.error }],
+                formData: { paymentMethod, deliveryMethod }
+            });
+        }
+
+        const itemsTotal = pricedItems.reduce((sum, it) => sum + (Number(it.lineFinal) || 0), 0);
+        const total = itemsTotal + deliveryPriceNumber + paymentPriceNumber;
 
         const order = await prisma.$transaction(async (tx) => {
             const createdOrder = await tx.order.create({
@@ -213,23 +344,14 @@ router.post('/checkout', authRequired, async (req, res) => {
                     deliveryMethod,
                     deliveryPrice: new Prisma.Decimal(deliveryPriceNumber.toFixed(2)),
                     items: {
-                        create: cart.map((item) => {
-                            const p = bySlug.get(item.slug);
-                            const qty = Math.max(1, Number.parseInt(item.quantity, 10) || 1);
-                            const base = Number.parseFloat(p.basePrice?.toString?.() ?? String(p.basePrice));
-                            const vat = Number.parseFloat(p.vat?.toString?.() ?? String(p.vat));
-                            const safeBase = Number.isFinite(base) ? base : 0;
-                            const safeVat = Number.isFinite(vat) ? vat : 0;
-                            const unitFinal = safeBase * (1 + safeVat / 100);
-                            const lineFinal = unitFinal * qty;
-
+                        create: pricedItems.map((it) => {
                             return {
-                                productId: p.id,
-                                quantity: qty,
-                                unitPrice: new Prisma.Decimal(safeBase.toFixed(2)),
-                                vat: new Prisma.Decimal(safeVat.toFixed(2)),
-                                finalPrice: new Prisma.Decimal(lineFinal.toFixed(2)),
-                                selectedAttributes: null,
+                                productId: it.productId,
+                                quantity: it.qty,
+                                unitPrice: new Prisma.Decimal(Number(it.unitBase || 0).toFixed(2)),
+                                vat: new Prisma.Decimal(Number(it.vat || 0).toFixed(2)),
+                                finalPrice: new Prisma.Decimal(Number(it.lineFinal || 0).toFixed(2)),
+                                selectedAttributes: it.selectedAttributes && it.selectedAttributes.length ? it.selectedAttributes : null,
                                 recipientName: null,
                                 dedication: null,
                                 status: 'NEW'
