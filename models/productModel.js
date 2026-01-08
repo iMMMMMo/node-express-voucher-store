@@ -65,7 +65,12 @@ const ProductModel = {
                 attributes: {
                     include: {
                         attribute: true
-                    }
+                    },
+                    orderBy: [
+                        { attributeId: 'asc' },
+                        { priceDelta: 'asc' },
+                        { id: 'asc' }
+                    ]
                 }
             }
         });
@@ -89,6 +94,19 @@ const ProductModel = {
                 value_id: row.id,
                 value: row.value,
                 priceDelta: toNumber(row.priceDelta) ?? 0
+            });
+        });
+
+        Object.keys(attributes).forEach((attrName) => {
+            attributes[attrName].sort((a, b) => {
+                const da = Number(a.priceDelta) || 0;
+                const db = Number(b.priceDelta) || 0;
+                if (da !== db) return da - db;
+                const va = (a.value ?? '').toString();
+                const vb = (b.value ?? '').toString();
+                const vc = va.localeCompare(vb, 'pl');
+                if (vc !== 0) return vc;
+                return (Number(a.value_id) || 0) - (Number(b.value_id) || 0);
             });
         });
 
