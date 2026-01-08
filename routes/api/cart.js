@@ -30,16 +30,18 @@ router.get('/count', (req, res) => {
 
 router.post('/add', async (req, res) => {
     try {
-        const { slug, quantity = 1 } = req.body;
+        const { slug, quantity = 1, selectedAttributeValueIds = [] } = req.body;
         
         if (!slug) {
             return res.status(400).json({ message: 'Product slug is required' });
         }
 
-        const product = await ProductModel.findProduct({ slug });
-        if (!product) {
+        const pricing = await ProductModel.getPricingForProductSelection({ slug, selectedAttributeValueIds });
+        if (!pricing) {
             return res.status(404).json({ message: 'Product not found' });
         }
+
+        const { product, unitFinal, cartItemKey, selectedAttributeValueIds: normalizedIds } = pricing;
 
         const qty = parseQuantity(quantity);
         if (qty === null || qty < 1) {
@@ -47,18 +49,20 @@ router.post('/add', async (req, res) => {
         }
 
         const cart = getCart(req);
-        const existingItemIndex = cart.findIndex(item => item.slug === slug);
+        const existingItemIndex = cart.findIndex(item => (item.key || item.slug) === cartItemKey);
 
         if (existingItemIndex > -1) {
             cart[existingItemIndex].quantity += qty;
         } else {
             cart.push({
+                key: cartItemKey,
                 slug: product.slug,
                 product_id: product.id,
                 name: product.name,
-                price: parseFloat(product.finalPrice),
+                price: parseFloat(unitFinal),
                 imagePath: product.imagePath || '/images/cloth_1.jpg',
-                quantity: qty
+                quantity: qty,
+                selectedAttributeValueIds: normalizedIds
             });
         }
 
@@ -74,9 +78,9 @@ router.post('/add', async (req, res) => {
     }
 });
 
-router.put('/update/:slug', (req, res) => {
+router.put('/update/:key', (req, res) => {
     try {
-        const { slug } = req.params;
+        const { key } = req.params;
         const { quantity } = req.body;
 
         const qty = parseQuantity(quantity);
@@ -85,16 +89,20 @@ router.put('/update/:slug', (req, res) => {
         }
 
         const cart = getCart(req);
-        const itemIndex = cart.findIndex(item => item.slug === slug);
+        const itemIndex = cart.findIndex(item => (item.key || item.slug) === key);
 
-        if (itemIndex === -1) {
+        const fallbackIndex = itemIndex === -1 ? cart.findIndex(item => item.slug === key) : itemIndex;
+
+        const resolvedIndex = fallbackIndex;
+
+        if (resolvedIndex === -1) {
             return res.status(404).json({ message: 'Item not found in cart' });
         }
 
         if (qty === 0) {
-            cart.splice(itemIndex, 1);
+            cart.splice(resolvedIndex, 1);
         } else {
-            cart[itemIndex].quantity = Math.max(1, qty);
+            cart[resolvedIndex].quantity = Math.max(1, qty);
         }
 
         const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -109,17 +117,20 @@ router.put('/update/:slug', (req, res) => {
     }
 });
 
-router.delete('/remove/:slug', (req, res) => {
+router.delete('/remove/:key', (req, res) => {
     try {
-        const { slug } = req.params;
+        const { key } = req.params;
         const cart = getCart(req);
-        const itemIndex = cart.findIndex(item => item.slug === slug);
 
-        if (itemIndex === -1) {
+        const itemIndex = cart.findIndex(item => (item.key || item.slug) === key);
+        const fallbackIndex = itemIndex === -1 ? cart.findIndex(item => item.slug === key) : itemIndex;
+        const resolvedIndex = fallbackIndex;
+
+        if (resolvedIndex === -1) {
             return res.status(404).json({ message: 'Item not found in cart' });
         }
 
-        cart.splice(itemIndex, 1);
+        cart.splice(resolvedIndex, 1);
         const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
         
         res.json({ 

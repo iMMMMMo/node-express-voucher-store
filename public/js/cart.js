@@ -25,13 +25,24 @@
             .catch(error => console.error('Error updating cart count:', error));
     }
 
+    function collectSelectedAttributeValueIds(container) {
+        const root = container || document;
+        const checked = Array.from(root.querySelectorAll('input[type="radio"][name^="attr-"]:checked'));
+        return checked
+            .map((el) => parseInt(el.value, 10))
+            .filter((v) => Number.isFinite(v) && !isNaN(v) && v > 0);
+    }
+
     function addToCart(slug, quantity = 1) {
+        const container = document.querySelector('.site-section') || document;
+        const selectedAttributeValueIds = collectSelectedAttributeValueIds(container);
+
         fetch('/api/cart/add', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ slug, quantity: sanitizeQuantity(quantity) })
+            body: JSON.stringify({ slug, quantity: sanitizeQuantity(quantity), selectedAttributeValueIds })
         })
         .then(response => response.json())
         .then(data => {
@@ -46,8 +57,8 @@
         });
     }
 
-    function updateCartItem(slug, quantity) {
-        fetch(`/api/cart/update/${slug}`, {
+    function updateCartItem(key, quantity) {
+        fetch(`/api/cart/update/${encodeURIComponent(key)}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -67,19 +78,19 @@
         });
     }
 
-    function removeFromCart(slug) {
+    function removeFromCart(key) {
         // if (!confirm('Czy na pewno chcesz usunąć ten produkt z koszyka?')) {
         //     return;
         // }
 
-        fetch(`/api/cart/remove/${slug}`, {
+        fetch(`/api/cart/remove/${encodeURIComponent(key)}`, {
             method: 'DELETE'
         })
         .then(response => response.json())
         .then(data => {
             if (data.message) {
                 updateCartCount();
-                const row = document.querySelector(`tr[data-slug="${slug}"]`);
+                const row = document.querySelector(`tr[data-key="${CSS.escape(key)}"]`);
                 if (row) {
                     row.remove();
                 }
@@ -109,11 +120,11 @@
         document.querySelectorAll('.js-cart-plus').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
-                const slug = this.getAttribute('data-slug');
-                const input = document.querySelector(`.js-cart-quantity[data-slug="${slug}"]`);
+                const key = this.getAttribute('data-key') || this.getAttribute('data-slug');
+                const input = document.querySelector(`.js-cart-quantity[data-key="${CSS.escape(key)}"]`);
                 if (input) {
                     const newQuantity = sanitizeQuantity(input.value) + 1;
-                    updateCartItem(slug, newQuantity);
+                    updateCartItem(key, newQuantity);
                 }
             });
         });
@@ -121,15 +132,15 @@
         document.querySelectorAll('.js-cart-minus').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
-                const slug = this.getAttribute('data-slug');
-                const input = document.querySelector(`.js-cart-quantity[data-slug="${slug}"]`);
+                const key = this.getAttribute('data-key') || this.getAttribute('data-slug');
+                const input = document.querySelector(`.js-cart-quantity[data-key="${CSS.escape(key)}"]`);
                 if (input) {
                     const currentQuantity = sanitizeQuantity(input.value);
                     if (currentQuantity > 1) {
                         const newQuantity = currentQuantity - 1;
-                        updateCartItem(slug, newQuantity);
+                        updateCartItem(key, newQuantity);
                     } else {
-                        removeFromCart(slug);
+                        removeFromCart(key);
                     }
                 }
             });
@@ -138,8 +149,8 @@
         document.querySelectorAll('.js-cart-remove').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
-                const slug = this.getAttribute('data-slug');
-                removeFromCart(slug);
+                const key = this.getAttribute('data-key') || this.getAttribute('data-slug');
+                removeFromCart(key);
             });
         });
     });
