@@ -30,7 +30,7 @@
                 <p><%= product.description %></p>
               <% } %>
               <p>
-                <strong class="text-primary h4"><%= parseFloat(product.finalPrice).toFixed(2) %> PLN</strong>
+                <strong class="text-primary h4"><span class="js-product-price" data-base-gross="<%= parseFloat(product.finalPrice).toFixed(2) %>"><%= parseFloat(product.finalPrice).toFixed(2) %></span> PLN</strong>
                 <% if (product.VAT > 0) { %>
                   <small class="text-muted">(including <%= product.VAT %>% VAT)</small>
                 <% } %>
@@ -44,9 +44,15 @@
                       <% product.attributes[attrName].forEach((attrValue, valueIndex) => { %>
                         <label class="d-flex mr-3 mb-2">
                           <span class="d-inline-block mr-2" style="top:-2px; position: relative;">
-                            <input type="radio" id="attr-<%= attrIndex %>-<%= valueIndex %>" name="attr-<%= attrName %>" value="<%= attrValue.value %>" <%= valueIndex === 0 ? 'checked' : '' %>>
+                            <input type="radio" id="attr-<%= attrIndex %>-<%= valueIndex %>" name="attr-<%= attrName %>" value="<%= attrValue.value_id %>" data-price-delta="<%= (typeof attrValue.priceDelta === 'number' ? attrValue.priceDelta.toFixed(2) : (parseFloat(attrValue.priceDelta || 0).toFixed(2))) %>" <%= valueIndex === 0 ? 'checked' : '' %>>
                           </span>
-                          <span class="d-inline-block text-black"><%= attrValue.value %></span>
+                          <span class="d-inline-block text-black">
+                            <%= attrValue.value %>
+                            <% const d = (typeof attrValue.priceDelta === 'number') ? attrValue.priceDelta : parseFloat(attrValue.priceDelta || 0); %>
+                            <% if (d && Number.isFinite(d)) { %>
+                              <small class="text-muted">(<%= d >= 0 ? '+' : '' %><%= d.toFixed(2) %> PLN)</small>
+                            <% } %>
+                          </span>
                         </label>
                       <% }); %>
                     </div>
@@ -95,3 +101,35 @@
   </div>
 
 <%- include('partials/scripts') %>
+
+<script>
+  (function () {
+    'use strict';
+
+    function toNumber(value) {
+      var n = Number.parseFloat(String(value));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function updateDisplayedPrice() {
+      var priceEl = document.querySelector('.js-product-price');
+      if (!priceEl) return;
+
+      var baseGross = toNumber(priceEl.getAttribute('data-base-gross'));
+      var selected = Array.from(document.querySelectorAll('input[type="radio"][name^="attr-"]:checked'));
+      var deltaGross = selected.reduce(function (sum, el) {
+        return sum + toNumber(el.getAttribute('data-price-delta'));
+      }, 0);
+
+      var totalGross = baseGross + deltaGross;
+      priceEl.textContent = totalGross.toFixed(2);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('input[type="radio"][name^="attr-"]').forEach(function (el) {
+        el.addEventListener('change', updateDisplayedPrice);
+      });
+      updateDisplayedPrice();
+    });
+  })();
+</script>

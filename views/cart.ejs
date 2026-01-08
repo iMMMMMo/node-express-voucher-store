@@ -41,27 +41,37 @@
                 <tbody id="cart-items">
                   <% if (cart && cart.length > 0) { %>
                     <% cart.forEach((item) => { %>
-                      <tr data-slug="<%= item.slug %>">
+                      <tr data-key="<%= (item.key || item.slug) %>">
                         <td class="product-thumbnail">
                           <img src="<%= item.imagePath %>" alt="<%= item.name %>" class="img-fluid">
                         </td>
                         <td class="product-name">
                           <h2 class="h5 text-black"><%= item.name %></h2>
+                          <% if (item.selectedAttributes && item.selectedAttributes.length) { %>
+                            <% item.selectedAttributes.forEach((a) => { %>
+                              <small class="text-muted d-block">
+                                <%= a.attributeName || '' %>: <%= a.value %>
+                                <% if (typeof a.priceDelta === 'number' && a.priceDelta) { %>
+                                  (<%= a.priceDelta >= 0 ? '+' : '' %><%= a.priceDelta.toFixed(2) %> PLN)
+                                <% } %>
+                              </small>
+                            <% }) %>
+                          <% } %>
                         </td>
                         <td><%= (Number(item.price) || 0).toFixed(2) %> PLN</td>
                         <td>
                           <div class="input-group mb-3 m-auto" style="max-width: 120px;">
                             <div class="input-group-prepend">
-                              <button class="btn btn-outline-primary js-cart-minus" type="button" data-slug="<%= item.slug %>">&minus;</button>
+                              <button class="btn btn-outline-primary js-cart-minus" type="button" data-key="<%= (item.key || item.slug) %>">&minus;</button>
                             </div>
-                            <input type="text" class="form-control text-center js-cart-quantity" value="<%= item.quantity %>" data-slug="<%= item.slug %>" readonly>
+                            <input type="text" class="form-control text-center js-cart-quantity" value="<%= item.quantity %>" data-key="<%= (item.key || item.slug) %>" readonly>
                             <div class="input-group-append">
-                              <button class="btn btn-outline-primary js-cart-plus" type="button" data-slug="<%= item.slug %>">&plus;</button>
+                              <button class="btn btn-outline-primary js-cart-plus" type="button" data-key="<%= (item.key || item.slug) %>">&plus;</button>
                             </div>
                           </div>
                         </td>
                         <td class="js-item-total"><%= ((Number(item.price) || 0) * (Number(item.quantity) || 0)).toFixed(2) %> PLN</td>
-                        <td><button class="btn btn-primary btn-sm js-cart-remove" data-slug="<%= item.slug %>">X</button></td>
+                        <td><button class="btn btn-primary btn-sm js-cart-remove" data-key="<%= (item.key || item.slug) %>">X</button></td>
                       </tr>
                     <% }); %>
                   <% } else { %>

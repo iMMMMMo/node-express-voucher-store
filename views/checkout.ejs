@@ -50,7 +50,19 @@
                       <% if (cart && cart.length > 0) { %>
                         <% cart.forEach((item) => { %>
                           <tr>
-                            <td><%= item.name %> <strong class="mx-2">x</strong> <%= item.quantity %></td>
+                            <td>
+                              <div><%= item.name %> <strong class="mx-2">x</strong> <%= item.quantity %></div>
+                              <% if (item.selectedAttributes && item.selectedAttributes.length) { %>
+                                <% item.selectedAttributes.forEach((a) => { %>
+                                  <small class="text-muted d-block">
+                                    <%= a.attributeName || '' %>: <%= a.value %>
+                                    <% if (typeof a.priceDelta === 'number' && a.priceDelta) { %>
+                                      (<%= a.priceDelta >= 0 ? '+' : '' %><%= a.priceDelta.toFixed(2) %> PLN)
+                                    <% } %>
+                                  </small>
+                                <% }) %>
+                              <% } %>
+                            </td>
                             <td><%= ((Number(item.price) || 0) * (Number(item.quantity) || 0)).toFixed(2) %> PLN</td>
                           </tr>
                         <% }) %>
