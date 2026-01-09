@@ -57,6 +57,62 @@
                               </small>
                             <% }) %>
                           <% } %>
+
+                          <div class="mt-2">
+                            <% 
+                              const qty = Number.parseInt(item.quantity, 10) || 1;
+                              const recipientsArr = Array.isArray(item.recipients) ? item.recipients : [];
+                              const legacyRecipient = (item.recipientName || item.dedication)
+                                ? { recipientName: item.recipientName || '', dedication: item.dedication || '' }
+                                : null;
+                              const effectiveRecipients = recipientsArr.length ? recipientsArr : (legacyRecipient ? [legacyRecipient] : []);
+                            %>
+
+                            <button
+                              type="button"
+                              class="btn btn-outline-primary btn-sm js-toggle-dedications"
+                              data-key="<%= (item.key || item.slug) %>"
+                            >
+                              Dedykacje
+                            </button>
+
+                            <div class="mt-3 js-dedications" data-key="<%= (item.key || item.slug) %>" style="display:none;">
+                              <div class="row">
+                                <% for (let i = 0; i < qty; i++) { 
+                                  const r = effectiveRecipients[i] || { recipientName: '', dedication: '' };
+                                %>
+                                  <div class="col-12 col-md-6 mb-3">
+                                    <div class="border p-3">
+                                      <div class="mb-2"><strong>Voucher <%= i + 1 %></strong></div>
+                                      <div class="form-group">
+                                        <label class="text-muted" style="font-size: 12px;">Recipient name (optional)</label>
+                                        <input
+                                          type="text"
+                                          class="form-control form-control-sm js-recipient-name"
+                                          data-key="<%= (item.key || item.slug) %>"
+                                          data-index="<%= i %>"
+                                          maxlength="60"
+                                          value="<%= r.recipientName || '' %>"
+                                          placeholder="e.g. Ania"
+                                        />
+                                      </div>
+                                      <div class="form-group mb-0">
+                                        <label class="text-muted" style="font-size: 12px;">Dedication (optional)</label>
+                                        <textarea
+                                          class="form-control form-control-sm js-dedication"
+                                          data-key="<%= (item.key || item.slug) %>"
+                                          data-index="<%= i %>"
+                                          maxlength="1000"
+                                          rows="2"
+                                          placeholder="Short message / wishes"
+                                        ><%= r.dedication || '' %></textarea>
+                                      </div>
+                                    </div>
+                                  </div>
+                                <% } %>
+                              </div>
+                            </div>
+                          </div>
                         </td>
                         <td><%= (Number(item.price) || 0).toFixed(2) %> PLN</td>
                         <td>

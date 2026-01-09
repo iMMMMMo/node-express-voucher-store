@@ -78,6 +78,47 @@
         });
     }
 
+    function updateCartItemMeta(key, payload) {
+        fetch(`/api/cart/update/${encodeURIComponent(key)}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(() => {
+            // No reload needed.
+        })
+        .catch(error => {
+            console.error('Error updating cart item meta:', error);
+        });
+    }
+
+    function getDedicationContainer(key) {
+        return document.querySelector(`.js-dedications[data-key="${CSS.escape(key)}"]`);
+    }
+
+    function updateRecipientEntryFromElement(el) {
+        const key = el.getAttribute('data-key');
+        const indexRaw = el.getAttribute('data-index');
+        const idx = parseInt(indexRaw, 10);
+        if (!key) return;
+        if (!Number.isFinite(idx) || isNaN(idx) || idx < 0) return;
+
+        const container = getDedicationContainer(key);
+        if (!container) return;
+
+        const recipientInput = container.querySelector(`.js-recipient-name[data-key="${CSS.escape(key)}"][data-index="${idx}"]`);
+        const dedicationTextarea = container.querySelector(`.js-dedication[data-key="${CSS.escape(key)}"][data-index="${idx}"]`);
+
+        updateCartItemMeta(key, {
+            recipientIndex: idx,
+            recipientName: recipientInput ? recipientInput.value : '',
+            dedication: dedicationTextarea ? dedicationTextarea.value : '',
+        });
+    }
+
     function removeFromCart(key) {
         // if (!confirm('Czy na pewno chcesz usunąć ten produkt z koszyka?')) {
         //     return;
@@ -151,6 +192,29 @@
                 e.preventDefault();
                 const key = this.getAttribute('data-key') || this.getAttribute('data-slug');
                 removeFromCart(key);
+            });
+        });
+
+        document.querySelectorAll('.js-toggle-dedications').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const key = this.getAttribute('data-key');
+                if (!key) return;
+                const container = getDedicationContainer(key);
+                if (!container) return;
+                container.style.display = container.style.display === 'none' ? 'block' : 'none';
+            });
+        });
+
+        document.querySelectorAll('.js-recipient-name').forEach(input => {
+            input.addEventListener('blur', function() {
+                updateRecipientEntryFromElement(this);
+            });
+        });
+
+        document.querySelectorAll('.js-dedication').forEach(textarea => {
+            textarea.addEventListener('blur', function() {
+                updateRecipientEntryFromElement(this);
             });
         });
     });

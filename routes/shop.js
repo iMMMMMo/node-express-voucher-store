@@ -305,13 +305,29 @@ router.post('/checkout', authRequired, async (req, res) => {
             const unitFinal = unitBase * vatFactor;
             const lineFinal = unitFinal * qty;
 
+            const recipientsRaw = Array.isArray(item.recipients) ? item.recipients : [];
+            const legacyEntry = ((item.recipientName ?? '') || (item.dedication ?? ''))
+                ? { recipientName: item.recipientName, dedication: item.dedication }
+                : null;
+            const effectiveRecipients = recipientsRaw.length ? recipientsRaw : (legacyEntry ? [legacyEntry] : []);
+            const recipients = Array.from({ length: qty }).map((_, idx) => {
+                const src = effectiveRecipients[idx];
+                if (!src) return null;
+                const rn = (src.recipientName ?? '').toString().trim().slice(0, 60) || null;
+                const dd = (src.dedication ?? '').toString().trim().slice(0, 1000) || null;
+                if (!rn && !dd) return null;
+                return { recipientName: rn, dedication: dd };
+            });
+
             return {
                 productId: p.id,
                 qty,
                 unitBase,
+                unitFinal,
                 vat,
                 lineFinal,
                 selectedAttributes,
+                recipients,
             };
         });
 
@@ -344,18 +360,23 @@ router.post('/checkout', authRequired, async (req, res) => {
                     deliveryMethod,
                     deliveryPrice: new Prisma.Decimal(deliveryPriceNumber.toFixed(2)),
                     items: {
-                        create: pricedItems.map((it) => {
-                            return {
-                                productId: it.productId,
-                                quantity: it.qty,
-                                unitPrice: new Prisma.Decimal(Number(it.unitBase || 0).toFixed(2)),
-                                vat: new Prisma.Decimal(Number(it.vat || 0).toFixed(2)),
-                                finalPrice: new Prisma.Decimal(Number(it.lineFinal || 0).toFixed(2)),
-                                selectedAttributes: it.selectedAttributes && it.selectedAttributes.length ? it.selectedAttributes : null,
-                                recipientName: null,
-                                dedication: null,
-                                status: 'NEW'
-                            };
+                        create: pricedItems.flatMap((it) => {
+                            const perUnit = [];
+                            for (let i = 0; i < it.qty; i++) {
+                                const rec = Array.isArray(it.recipients) ? it.recipients[i] : null;
+                                perUnit.push({
+                                    productId: it.productId,
+                                    quantity: 1,
+                                    unitPrice: new Prisma.Decimal(Number(it.unitBase || 0).toFixed(2)),
+                                    vat: new Prisma.Decimal(Number(it.vat || 0).toFixed(2)),
+                                    finalPrice: new Prisma.Decimal(Number(it.unitFinal || 0).toFixed(2)),
+                                    selectedAttributes: it.selectedAttributes && it.selectedAttributes.length ? it.selectedAttributes : null,
+                                    recipientName: rec?.recipientName ?? null,
+                                    dedication: rec?.dedication ?? null,
+                                    status: 'NEW'
+                                });
+                            }
+                            return perUnit;
                         })
                     }
                 },

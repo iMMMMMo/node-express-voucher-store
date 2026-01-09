@@ -17,6 +17,34 @@ const parseQuantity = (value) => {
     return parsed;
 };
 
+const normalizeText = (value, { maxLen }) => {
+    if (value === null || typeof value === 'undefined') return null;
+    const text = value.toString().trim();
+    if (!text.length) return null;
+    if (typeof maxLen === 'number' && maxLen > 0) {
+        return text.slice(0, maxLen);
+    }
+    return text;
+};
+
+const normalizeRecipientEntry = (entry) => {
+    const recipientName = normalizeText(entry?.recipientName, { maxLen: 60 });
+    const dedication = normalizeText(entry?.dedication, { maxLen: 1000 });
+    if (!recipientName && !dedication) return null;
+    return { recipientName, dedication };
+};
+
+const ensureRecipientsArray = (item) => {
+    if (Array.isArray(item.recipients)) return item.recipients;
+    const migrated = [];
+    const legacy = normalizeRecipientEntry({ recipientName: item.recipientName, dedication: item.dedication });
+    if (legacy) migrated.push(legacy);
+    item.recipients = migrated;
+    delete item.recipientName;
+    delete item.dedication;
+    return item.recipients;
+};
+
 router.get('/', (req, res) => {
     const cart = getCart(req);
     res.json(cart);
@@ -62,7 +90,8 @@ router.post('/add', async (req, res) => {
                 price: parseFloat(unitFinal),
                 imagePath: product.imagePath || '/images/cloth_1.jpg',
                 quantity: qty,
-                selectedAttributeValueIds: normalizedIds
+                selectedAttributeValueIds: normalizedIds,
+                recipients: []
             });
         }
 
@@ -81,11 +110,23 @@ router.post('/add', async (req, res) => {
 router.put('/update/:key', (req, res) => {
     try {
         const { key } = req.params;
-        const { quantity } = req.body;
+        const { quantity, recipientName, dedication, recipients, recipientIndex } = req.body;
 
-        const qty = parseQuantity(quantity);
-        if (qty === null || qty < 0) {
-            return res.status(400).json({ message: 'Quantity must be an integer (0 to remove, or 1+ to keep)' });
+        const hasQuantity = typeof quantity !== 'undefined';
+        const hasRecipient = typeof recipientName !== 'undefined';
+        const hasDedication = typeof dedication !== 'undefined';
+        const hasRecipientsArray = typeof recipients !== 'undefined';
+        const hasRecipientIndex = typeof recipientIndex !== 'undefined';
+        if (!hasQuantity && !hasRecipient && !hasDedication && !hasRecipientsArray && !hasRecipientIndex) {
+            return res.status(400).json({ message: 'Nothing to update' });
+        }
+
+        let qty = null;
+        if (hasQuantity) {
+            qty = parseQuantity(quantity);
+            if (qty === null || qty < 0) {
+                return res.status(400).json({ message: 'Quantity must be an integer (0 to remove, or 1+ to keep)' });
+            }
         }
 
         const cart = getCart(req);
@@ -99,10 +140,58 @@ router.put('/update/:key', (req, res) => {
             return res.status(404).json({ message: 'Item not found in cart' });
         }
 
-        if (qty === 0) {
-            cart.splice(resolvedIndex, 1);
-        } else {
-            cart[resolvedIndex].quantity = Math.max(1, qty);
+        if (hasQuantity) {
+            if (qty === 0) {
+                cart.splice(resolvedIndex, 1);
+            } else {
+                cart[resolvedIndex].quantity = Math.max(1, qty);
+            }
+        }
+
+        if (cart[resolvedIndex]) {
+            const item = cart[resolvedIndex];
+            const currentQty = Math.max(1, Number.parseInt(item.quantity, 10) || 1);
+            const arr = ensureRecipientsArray(item);
+
+            if (arr.length > currentQty) {
+                arr.length = currentQty;
+            }
+
+            if ((hasRecipient || hasDedication) && !hasRecipientIndex && !hasRecipientsArray) {
+                const entry = normalizeRecipientEntry({
+                    recipientName: hasRecipient ? recipientName : arr[0]?.recipientName,
+                    dedication: hasDedication ? dedication : arr[0]?.dedication,
+                });
+                arr[0] = entry;
+            }
+
+            if (hasRecipientsArray) {
+                if (!Array.isArray(recipients)) {
+                    return res.status(400).json({ message: 'Recipients must be an array' });
+                }
+                item.recipients = recipients
+                    .slice(0, currentQty)
+                    .map(normalizeRecipientEntry);
+            }
+
+            if (hasRecipientIndex) {
+                const idx = Number.parseInt(recipientIndex, 10);
+                if (!Number.isFinite(idx) || idx < 0) {
+                    return res.status(400).json({ message: 'recipientIndex must be a non-negative integer' });
+                }
+                if (idx >= currentQty) {
+                    return res.status(400).json({ message: 'recipientIndex out of range for current quantity' });
+                }
+
+                const prev = arr[idx] || { recipientName: null, dedication: null };
+                const entry = normalizeRecipientEntry({
+                    recipientName: hasRecipient ? recipientName : prev.recipientName,
+                    dedication: hasDedication ? dedication : prev.dedication,
+                });
+                arr[idx] = entry;
+                if (arr.length > currentQty) arr.length = currentQty;
+                item.recipients = arr;
+            }
         }
 
         const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
