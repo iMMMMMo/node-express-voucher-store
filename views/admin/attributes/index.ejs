@@ -1,0 +1,74 @@
+<%
+  const attributes = (viewData && viewData.attributes) ? viewData.attributes : [];
+%>
+
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <h3 class="mb-0">Attributes</h3>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+          <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Attributes</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+    <% if (viewData && viewData.error) { %>
+      <div class="alert alert-danger" role="alert"><%= viewData.error %></div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Attributes list</h3>
+        <div class="card-tools">
+          <a href="/admin/attributes/new" class="btn btn-primary btn-sm">New attribute</a>
+        </div>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped mb-0">
+            <thead>
+              <tr>
+                <th style="width: 80px;">ID</th>
+                <th>Name</th>
+                <th style="width: 160px;">Values count</th>
+                <th style="width: 160px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!attributes.length) { %>
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-4">No attributes found.</td>
+                </tr>
+              <% } %>
+
+              <% attributes.forEach((attr) => { %>
+                <tr>
+                  <td><%= attr.id %></td>
+                  <td><%= attr.name %></td>
+                  <td><%= attr._count ? attr._count.values : 0 %></td>
+                  <td>
+                    <div class="btn-group" role="group" aria-label="Attribute actions">
+                      <a href="/admin/attributes/<%= attr.id %>/edit" class="btn btn-outline-primary btn-sm">Edit</a>
+                      <form method="post" action="/admin/attributes/<%= attr.id %>/delete" style="display: inline;" onsubmit="return confirm('Delete this attribute?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,64 @@
+<%
+  const mode = (viewData && viewData.mode) ? viewData.mode : 'create';
+  const errors = (viewData && viewData.errors) ? viewData.errors : null;
+  const attribute = (viewData && viewData.attribute) ? viewData.attribute : null;
+  const formData = (viewData && viewData.formData) ? viewData.formData : { name: '' };
+
+  const isEdit = mode === 'edit';
+  const action = isEdit && attribute ? `/admin/attributes/${attribute.id}` : '/admin/attributes';
+%>
+
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <h3 class="mb-0"><%= isEdit ? 'Edit attribute' : 'New attribute' %></h3>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+          <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="/admin/attributes">Attributes</a></li>
+          <li class="breadcrumb-item active" aria-current="page"><%= isEdit ? 'Edit' : 'New' %></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+    <% if (errors && errors.length) { %>
+      <div class="alert alert-danger" role="alert">
+        <ul class="mb-0">
+          <% errors.forEach((e) => { %>
+            <li><%= e.msg %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><%= isEdit ? `Attribute #${attribute ? attribute.id : ''}` : 'Create attribute' %></h3>
+      </div>
+
+      <div class="card-body">
+        <form method="post" action="<%= action %>">
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" name="name" class="form-control" maxlength="120" value="<%= formData.name || '' %>" required />
+          </div>
+
+          <% if (isEdit && attribute && attribute._count) { %>
+            <div class="text-muted mb-3">Values assigned to products: <%= attribute._count.values %></div>
+          <% } %>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><%= isEdit ? 'Save' : 'Create' %></button>
+            <a href="/admin/attributes" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
