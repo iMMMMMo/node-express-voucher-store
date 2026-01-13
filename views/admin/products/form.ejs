@@ -1,0 +1,231 @@
+<%
+  const mode = (viewData && viewData.mode) ? viewData.mode : 'create';
+  const errors = (viewData && viewData.errors) ? viewData.errors : null;
+  const formData = (viewData && viewData.formData) ? viewData.formData : {};
+  const product = (viewData && viewData.product) ? viewData.product : null;
+  const availableImages = (viewData && viewData.availableImages) ? viewData.availableImages : [];
+
+  const isEdit = mode === 'edit';
+  const action = isEdit && product && product.id ? `/admin/products/${product.id}` : '/admin/products';
+  const heading = isEdit ? 'Edit product' : 'New product';
+%>
+
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <h3 class="mb-0"><%= heading %></h3>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+          <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="/admin/products">Products</a></li>
+          <li class="breadcrumb-item active" aria-current="page"><%= heading %></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+    <% if (errors && errors.length) { %>
+      <div class="alert alert-danger" role="alert">
+        <ul class="mb-0">
+          <% errors.forEach((e) => { %>
+            <li><%= e.msg %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><%= heading %></h3>
+      </div>
+
+      <form method="post" action="<%= action %>" enctype="multipart/form-data">
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label" for="name">Name</label>
+            <input class="form-control" type="text" id="name" name="name" value="<%= (formData.name ?? '') %>" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="slug">Slug</label>
+            <input class="form-control" type="text" id="slug" name="slug" value="<%= (formData.slug ?? '') %>" required />
+            <div class="form-text">Example: <code>massage-60-min</code> (lowercase letters, numbers, hyphens)</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="description">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="6"><%= (formData.description ?? '') %></textarea>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="basePrice">Base price (net)</label>
+              <input class="form-control" type="text" id="basePrice" name="basePrice" value="<%= (formData.basePrice ?? '') %>" required />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label" for="vat">VAT (%)</label>
+              <input class="form-control" type="text" id="vat" name="vat" value="<%= (formData.vat ?? '') %>" required />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="image">Image</label>
+            <input class="form-control" type="file" id="image" name="image" accept="image/*" />
+
+            <div class="form-text">Or select an already uploaded image:</div>
+
+            <div class="mt-2">
+              <% if (!availableImages.length) { %>
+                <div class="text-muted">No uploaded images found in <code>public/images/products</code>.</div>
+              <% } else { %>
+                <div class="row g-2">
+                  <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                    <label class="w-100">
+                      <input
+                        class="form-check-input visually-hidden"
+                        type="radio"
+                        name="existingImage"
+                        id="existingImage_none"
+                        value=""
+                        <%= (String(formData.existingImage ?? '') === '') ? 'checked' : '' %>
+                      />
+
+                      <div class="image-tile border rounded p-2" data-image-tile>
+                        <div
+                          class="image-tile-placeholder border rounded w-100 d-flex align-items-center justify-content-center text-muted"
+                          style="aspect-ratio: 1 / 1;"
+                        >
+                          No image
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+
+                  <% availableImages.forEach((img) => { %>
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                      <label class="w-100">
+                        <input
+                          class="form-check-input visually-hidden"
+                          type="radio"
+                          name="existingImage"
+                          id="existingImage_<%= img.name.replace(/[^a-zA-Z0-9_-]/g, '_') %>"
+                          value="<%= img.name %>"
+                          <%= (String(formData.existingImage ?? '') === String(img.name)) ? 'checked' : '' %>
+                        />
+
+                        <div class="image-tile border rounded p-2" data-image-tile>
+                          <img
+                            src="<%= img.webPath %>"
+                            alt="Selected image"
+                            class="img-thumbnail w-100"
+                            style="object-fit: cover; aspect-ratio: 1 / 1;"
+                          />
+                        </div>
+                      </label>
+                    </div>
+                  <% }) %>
+                </div>
+              <% } %>
+            </div>
+
+            <% if (isEdit && product && product.imagePath) { %>
+              <div class="form-text">
+                Current: <a href="<%= product.imagePath %>" target="_blank" rel="noopener noreferrer"><%= product.imagePath %></a>
+              </div>
+            <% } %>
+          </div>
+
+          <% if (isEdit && product && product.createdAt) { %>
+            <div class="mb-3">
+              <label class="form-label">Created</label>
+              <div class="form-control-plaintext"><%= new Date(product.createdAt).toLocaleString() %></div>
+            </div>
+          <% } %>
+
+          <% if (isEdit && product && product._count) { %>
+            <div class="mb-3 text-muted">
+              Orders: <%= product._count.orderItems %> | Attribute values: <%= product._count.attributes %>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="card-footer d-flex gap-2">
+          <button type="submit" class="btn btn-primary"><%= isEdit ? 'Save changes' : 'Create product' %></button>
+          <a href="/admin/products" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<% if (!isEdit) { %>
+  <script>
+    (function () {
+      const nameInput = document.getElementById('name');
+      const slugInput = document.getElementById('slug');
+      if (!nameInput || !slugInput) return;
+
+      const normalizePolish = (text) => {
+        const map = {
+          'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ż': 'z', 'ź': 'z',
+          'Ą': 'a', 'Ć': 'c', 'Ę': 'e', 'Ł': 'l', 'Ń': 'n', 'Ó': 'o', 'Ś': 's', 'Ż': 'z', 'Ź': 'z'
+        };
+        return (text || '').split('').map((ch) => map[ch] ?? ch).join('');
+      };
+
+      const toSlug = (text) => {
+        const normalized = normalizePolish(text).toLowerCase();
+        return normalized
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .replace(/-+/g, '-');
+      };
+
+      let slugTouched = false;
+      slugInput.addEventListener('input', () => {
+        slugTouched = slugInput.value.trim().length > 0;
+      });
+
+      nameInput.addEventListener('input', () => {
+        if (slugTouched) return;
+        slugInput.value = toSlug(nameInput.value);
+      });
+    })();
+  </script>
+<% } %>
+
+<style>
+  .image-tile {
+    cursor: pointer;
+    user-select: none;
+  }
+</style>
+
+<script>
+  (function () {
+    const inputs = document.querySelectorAll('input[name="existingImage"]');
+    if (!inputs.length) return;
+
+    const updateTiles = () => {
+      inputs.forEach((input) => {
+        const label = input.closest('label');
+        const tile = label ? label.querySelector('[data-image-tile]') : null;
+        if (!tile) return;
+
+        if (input.checked) {
+          tile.classList.add('border-primary', 'border-2', 'bg-body-tertiary');
+        } else {
+          tile.classList.remove('border-primary', 'border-2', 'bg-body-tertiary');
+        }
+      });
+    };
+
+    inputs.forEach((input) => input.addEventListener('change', updateTiles));
+    updateTiles();
+  })();
+</script>
