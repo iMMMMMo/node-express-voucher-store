@@ -33,6 +33,9 @@
     <div class="card">
       <div class="card-header">
         <h3 class="card-title">Products list</h3>
+        <div class="card-tools">
+          <a href="/admin/products/new" class="btn btn-primary btn-sm">New product</a>
+        </div>
       </div>
 
       <div class="card-body p-0">
@@ -50,12 +53,13 @@
                 <th style="width: 160px;">Final price</th>
                 <th style="width: 170px;">Attribute pricing</th>
                 <th style="width: 180px;">Created</th>
+                <th style="width: 180px;">Actions</th>
               </tr>
             </thead>
             <tbody>
               <% if (!products.length) { %>
                 <tr>
-                  <td colspan="10" class="text-center text-muted py-4">No products found.</td>
+                  <td colspan="11" class="text-center text-muted py-4">No products found.</td>
                 </tr>
               <% } %>
 
@@ -88,6 +92,14 @@
                     <a class="btn btn-sm btn-outline-primary" href="/admin/products/<%= product.id %>/attributes">Edit</a>
                   </td>
                   <td><%= product.createdAt ? new Date(product.createdAt).toLocaleString() : '' %></td>
+                  <td>
+                    <div class="btn-group" role="group" aria-label="Product actions">
+                      <a href="/admin/products/<%= product.id %>/edit" class="btn btn-outline-primary btn-sm">Edit</a>
+                      <form method="post" action="/admin/products/<%= product.id %>/delete" style="display: inline;" onsubmit="return confirm('Delete this product?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                      </form>
+                    </div>
+                  </td>
                 </tr>
               <% }) %>
             </tbody>
