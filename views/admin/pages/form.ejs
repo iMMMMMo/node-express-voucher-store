@@ -227,3 +227,40 @@
     updateTiles();
   })();
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js" referrerpolicy="origin"></script>
+
+<script>
+  (function () {
+    const textarea = document.getElementById('content');
+    if (!textarea) return;
+    if (!window.tinymce) return;
+
+    const decodeHtmlEntities = (str) => {
+      const el = document.createElement('textarea');
+      el.innerHTML = String(str ?? '');
+      return el.value;
+    };
+
+    tinymce.init({
+      selector: '#content',
+      height: 420,
+      menubar: false,
+      branding: false,
+      plugins: 'lists link table code autoresize',
+      toolbar: 'undo redo | blocks | bold italic underline | bullist numlist | link table | code',
+      setup: (editor) => {
+        editor.on('init', () => {
+          editor.setContent(decodeHtmlEntities(textarea.value));
+        });
+      },
+    });
+
+    const form = textarea.closest('form');
+    if (form) {
+      form.addEventListener('submit', () => {
+        if (window.tinymce) tinymce.triggerSave();
+      });
+    }
+  })();
+</script>
