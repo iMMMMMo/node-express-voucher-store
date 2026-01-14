@@ -1,4 +1,33 @@
-<% const product = viewData && viewData.product ? viewData.product : null; %>
+<%
+  const product = viewData && viewData.product ? viewData.product : null;
+  const allAttributes = (viewData && viewData.allAttributes) ? viewData.allAttributes : [];
+  const errors = (viewData && viewData.errors) ? viewData.errors : null;
+  const formState = (viewData && viewData.formState) ? viewData.formState : null;
+
+  const getField = (name, fallback) => {
+    if (!formState) return fallback;
+    const v = formState[name];
+    return (typeof v === 'undefined') ? fallback : v;
+  };
+
+  const asNumberString = (value, fallback = '0.00') => {
+    if (value === null || typeof value === 'undefined') return fallback;
+    const s = value.toString().trim().replace(',', '.');
+    const n = Number.parseFloat(s);
+    return Number.isFinite(n) ? n.toFixed(2) : fallback;
+  };
+
+  const asArray = (value) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'undefined' || value === null) return [];
+    return [value];
+  };
+
+  const newAttrIds = formState ? asArray(formState['new_attributeId']) : [];
+  const newValues = formState ? asArray(formState['new_value']) : [];
+  const newDeltas = formState ? asArray(formState['new_priceDelta']) : [];
+  const newMax = Math.max(newAttrIds.length, newValues.length, newDeltas.length);
+%>
 
 <div class="app-content-header">
   <div class="container-fluid">
@@ -22,6 +51,16 @@
 
 <div class="app-content">
   <div class="container-fluid">
+    <% if (errors && errors.length) { %>
+      <div class="alert alert-danger" role="alert">
+        <ul class="mb-0">
+          <% errors.forEach((e) => { %>
+            <li><%= e.msg %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+
     <% if (viewData && viewData.saved) { %>
       <div class="alert alert-success" role="alert">Saved.</div>
     <% } %>
@@ -33,7 +72,7 @@
       <form method="post" action="/admin/products/<%= product.id %>/attributes">
         <div class="card">
           <div class="card-header">
-            <h3 class="card-title">Price deltas (GROSS, VAT-included)</h3>
+            <h3 class="card-title">Attributes & pricing (Price delta is GROSS, VAT-included)</h3>
           </div>
 
           <div class="card-body p-0">
@@ -41,33 +80,112 @@
               <table class="table table-striped mb-0">
                 <thead>
                   <tr>
+                    <th style="width: 90px;">Delete</th>
                     <th style="width: 260px;">Attribute</th>
                     <th>Value</th>
-                    <th style="width: 200px;">Price delta (GROSS)</th>
+                    <th style="width: 220px;">Price delta (GROSS)</th>
                   </tr>
                 </thead>
                 <tbody>
                   <% if (!product.attributes || !product.attributes.length) { %>
                     <tr>
-                      <td colspan="3" class="text-center text-muted py-4">No attributes assigned to this product.</td>
+                      <td colspan="4" class="text-center text-muted py-4">No attributes assigned to this product.</td>
                     </tr>
                   <% } %>
 
                   <% (product.attributes || []).forEach((row) => { %>
                     <tr>
-                      <td><%= row.attribute ? row.attribute.name : '' %></td>
-                      <td><%= row.value %></td>
+                      <td class="text-center">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          name="row_<%= row.id %>_delete"
+                          value="1"
+                          <%= getField(`row_${row.id}_delete`, '') ? 'checked' : '' %>
+                        />
+                      </td>
+                      <td>
+                        <select class="form-select" name="row_<%= row.id %>_attributeId" required>
+                          <option value="" disabled <%= !getField(`row_${row.id}_attributeId`, row.attributeId) ? 'selected' : '' %>>Select…</option>
+                          <% allAttributes.forEach((a) => { %>
+                            <option
+                              value="<%= a.id %>"
+                              <%= (String(getField(`row_${row.id}_attributeId`, row.attributeId)) === String(a.id)) ? 'selected' : '' %>
+                            ><%= a.name %></option>
+                          <% }) %>
+                        </select>
+                        <% if (!allAttributes.length) { %>
+                          <div class="form-text text-danger">No attributes exist yet. Add some in /admin/attributes.</div>
+                        <% } %>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          name="row_<%= row.id %>_value"
+                          value="<%= getField(`row_${row.id}_value`, row.value || '') %>"
+                          maxlength="255"
+                          required
+                        />
+                      </td>
                       <td>
                         <input
                           type="number"
                           class="form-control"
-                          name="priceDelta_<%= row.id %>"
+                          name="row_<%= row.id %>_priceDelta"
                           step="0.01"
-                          value="<%= row.priceDelta ? row.priceDelta.toString() : '0.00' %>"
+                          value="<%= asNumberString(getField(`row_${row.id}_priceDelta`, row.priceDelta)) %>"
                         />
                       </td>
                     </tr>
                   <% }) %>
+
+                  <tr class="table-secondary">
+                    <td colspan="4"><strong>Add new attribute option</strong></td>
+                  </tr>
+
+                  <% for (let i = 0; i < newMax; i++) { 
+                    const sel = (typeof newAttrIds[i] === 'undefined') ? '' : String(newAttrIds[i]);
+                    const val = (typeof newValues[i] === 'undefined') ? '' : String(newValues[i] ?? '');
+                    const del = (typeof newDeltas[i] === 'undefined') ? '0.00' : asNumberString(newDeltas[i]);
+                    if (!sel && !val) continue;
+                  %>
+                    <tr>
+                      <td class="text-center text-muted">—</td>
+                      <td>
+                        <select class="form-select" name="new_attributeId[]">
+                          <option value="" <%= !sel ? 'selected' : '' %>>Select…</option>
+                          <% allAttributes.forEach((a) => { %>
+                            <option value="<%= a.id %>" <%= sel === String(a.id) ? 'selected' : '' %>><%= a.name %></option>
+                          <% }) %>
+                        </select>
+                      </td>
+                      <td>
+                        <input type="text" class="form-control" name="new_value[]" maxlength="255" placeholder="e.g. 60 min" value="<%= val %>" />
+                      </td>
+                      <td>
+                        <input type="number" class="form-control" name="new_priceDelta[]" step="0.01" value="<%= del %>" />
+                      </td>
+                    </tr>
+                  <% } %>
+
+                  <tr class="js-new-row">
+                    <td class="text-center text-muted">—</td>
+                    <td>
+                      <select class="form-select" name="new_attributeId[]">
+                        <option value="" selected>Select…</option>
+                        <% allAttributes.forEach((a) => { %>
+                          <option value="<%= a.id %>"><%= a.name %></option>
+                        <% }) %>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control" name="new_value[]" maxlength="255" placeholder="e.g. 60 min" />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control" name="new_priceDelta[]" step="0.01" value="0.00" />
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -75,6 +193,7 @@
 
           <div class="card-footer d-flex gap-2">
             <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-outline-primary" id="addRowBtn">Add row</button>
             <a class="btn btn-outline-secondary" href="/admin/products">Back</a>
           </div>
         </div>
@@ -82,3 +201,29 @@
     <% } %>
   </div>
 </div>
+
+<script>
+  (function () {
+    const addBtn = document.getElementById('addRowBtn');
+    if (!addBtn) return;
+
+    const tbody = document.querySelector('table tbody');
+    if (!tbody) return;
+
+    addBtn.addEventListener('click', () => {
+      const baseRow = tbody.querySelector('tr.js-new-row');
+      if (!baseRow) return;
+      const clone = baseRow.cloneNode(true);
+
+      clone.querySelectorAll('input').forEach((i) => {
+        if (i.type === 'number') i.value = '0.00';
+        else i.value = '';
+      });
+      clone.querySelectorAll('select').forEach((s) => {
+        s.selectedIndex = 0;
+      });
+
+      tbody.insertBefore(clone, baseRow.nextSibling);
+    });
+  })();
+</script>

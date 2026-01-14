@@ -291,6 +291,11 @@ router.get("/:id/attributes", async (req, res) => {
   if (!id) return res.redirect("/admin/products");
 
   try {
+    const allAttributes = await prisma.productAttribute.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    });
+
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
@@ -308,7 +313,10 @@ router.get("/:id/attributes", async (req, res) => {
       viewFile: "../admin/products/attributes",
       viewData: {
         product,
+        allAttributes,
         saved: req.query.saved === "1",
+        errors: null,
+        formState: null,
       },
     });
   } catch (error) {
@@ -472,21 +480,135 @@ router.post("/:id/attributes", async (req, res) => {
   if (!id) return res.redirect("/admin/products");
 
   try {
-    const values = await prisma.productAttributeValue.findMany({
-      where: { productId: id },
-      select: { id: true },
+    const allAttributes = await prisma.productAttribute.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
     });
+    const attributeIds = new Set(allAttributes.map((a) => a.id));
 
-    await prisma.$transaction(
-      values.map((v) => {
-        const field = `priceDelta_${v.id}`;
-        const delta = parseMoney(req.body[field]);
-        return prisma.productAttributeValue.update({
-          where: { id: v.id },
-          data: { priceDelta: new Prisma.Decimal(delta.toFixed(2)) },
-        });
-      })
-    );
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        attributes: {
+          include: { attribute: true },
+          orderBy: [{ attributeId: "asc" }, { id: "asc" }],
+        },
+      },
+    });
+    if (!product) return res.redirect("/admin/products");
+
+    const errors = [];
+    const ops = [];
+
+    const normalizeArray = (value) => {
+      if (Array.isArray(value)) return value;
+      if (typeof value === "undefined" || value === null) return [];
+      return [value];
+    };
+
+    for (const row of product.attributes) {
+      const rowId = row.id;
+      const del = req.body[`row_${rowId}_delete`];
+
+      if (del) {
+        ops.push(
+          prisma.productAttributeValue.delete({
+            where: { id: rowId },
+          })
+        );
+        continue;
+      }
+
+      const attributeIdRaw = req.body[`row_${rowId}_attributeId`];
+      const valueRaw = req.body[`row_${rowId}_value`];
+      const deltaRaw = req.body[`row_${rowId}_priceDelta`];
+
+      const attributeId = parseId(attributeIdRaw);
+      const value = (valueRaw ?? "").toString().trim();
+      const delta = parseMoney(deltaRaw);
+
+      let rowHasError = false;
+      if (!attributeId || !attributeIds.has(attributeId)) {
+        errors.push({ msg: `Row #${rowId}: invalid attribute selected.` });
+        rowHasError = true;
+      }
+      if (!value) {
+        errors.push({ msg: `Row #${rowId}: value is required.` });
+        rowHasError = true;
+      }
+
+      if (rowHasError) continue;
+
+      ops.push(
+        prisma.productAttributeValue.update({
+          where: { id: rowId },
+          data: {
+            attributeId,
+            value: value.slice(0, 255),
+            priceDelta: new Prisma.Decimal(delta.toFixed(2)),
+          },
+        })
+      );
+    }
+
+    const newAttrIds = normalizeArray(req.body["new_attributeId"]);
+    const newValues = normalizeArray(req.body["new_value"]);
+    const newDeltas = normalizeArray(req.body["new_priceDelta"]);
+    const maxLen = Math.max(newAttrIds.length, newValues.length, newDeltas.length);
+
+    for (let i = 0; i < maxLen; i++) {
+      const attributeIdRaw = newAttrIds[i];
+      const valueRaw = newValues[i];
+      const deltaRaw = newDeltas[i];
+
+      const attributeId = parseId(attributeIdRaw);
+      const value = (valueRaw ?? "").toString().trim();
+      const delta = parseMoney(deltaRaw);
+
+      const isEmpty = !attributeIdRaw && !valueRaw;
+      if (isEmpty) continue;
+
+      let newRowHasError = false;
+      if (!attributeId || !attributeIds.has(attributeId)) {
+        errors.push({ msg: `New row #${i + 1}: invalid attribute selected.` });
+        newRowHasError = true;
+      }
+      if (!value) {
+        errors.push({ msg: `New row #${i + 1}: value is required.` });
+        newRowHasError = true;
+      }
+
+      if (newRowHasError) continue;
+
+      ops.push(
+        prisma.productAttributeValue.create({
+          data: {
+            productId: id,
+            attributeId,
+            value: value.slice(0, 255),
+            priceDelta: new Prisma.Decimal(delta.toFixed(2)),
+          },
+        })
+      );
+    }
+
+    if (errors.length) {
+      return res.status(400).render("admin/layout", {
+        title: `Admin | Product attributes`,
+        viewFile: "../admin/products/attributes",
+        viewData: {
+          product,
+          allAttributes,
+          saved: false,
+          errors,
+          formState: req.body,
+        },
+      });
+    }
+
+    if (ops.length) {
+      await prisma.$transaction(ops);
+    }
 
     return res.redirect(`/admin/products/${id}/attributes?saved=1`);
   } catch (error) {

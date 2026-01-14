@@ -51,7 +51,6 @@
                 <th style="width: 140px;">Base price</th>
                 <th style="width: 100px;">VAT</th>
                 <th style="width: 160px;">Final price</th>
-                <th style="width: 170px;">Attribute pricing</th>
                 <th style="width: 180px;">Created</th>
                 <th style="width: 180px;">Actions</th>
               </tr>
@@ -88,13 +87,11 @@
                   <td><%= (typeof product.basePrice === 'number') ? product.basePrice.toFixed(2) : '' %></td>
                   <td><%= (typeof product.vat === 'number') ? product.vat.toFixed(2) + '%' : '' %></td>
                   <td><%= (typeof product.finalPrice === 'number') ? product.finalPrice.toFixed(2) : '' %></td>
-                  <td>
-                    <a class="btn btn-sm btn-outline-primary" href="/admin/products/<%= product.id %>/attributes">Edit</a>
-                  </td>
                   <td><%= product.createdAt ? new Date(product.createdAt).toLocaleString() : '' %></td>
                   <td>
                     <div class="btn-group" role="group" aria-label="Product actions">
                       <a href="/admin/products/<%= product.id %>/edit" class="btn btn-outline-primary btn-sm">Edit</a>
+                      <a href="/admin/products/<%= product.id %>/attributes" class="btn btn-outline-primary btn-sm text-nowrap">Manage attributes</a>
                       <form method="post" action="/admin/products/<%= product.id %>/delete" style="display: inline;" onsubmit="return confirm('Delete this product?');">
                         <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
                       </form>
