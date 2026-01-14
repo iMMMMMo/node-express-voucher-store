@@ -30,11 +30,24 @@ router.post('/register', [
         .trim()
         .isLength({ min: 2 })
         .withMessage('Full name must be at least 2 characters long'),
-    body('phone')
-        .optional()
+    body('phonePrefixDigits')
+        .optional({ checkFalsy: true })
         .trim()
-        .matches(/^[0-9+\-\s()]+$/)
-        .withMessage('Please enter a valid phone number')
+        .matches(/^\d{1,3}$/)
+        .withMessage('Phone prefix must be 1–3 digits'),
+    body('phoneNumber')
+        .optional({ checkFalsy: true })
+        .trim()
+        .matches(/^[0-9\-\s()]+$/)
+        .withMessage('Please enter a valid phone number'),
+    body('phoneNumber')
+        .custom((value, { req }) => {
+            const prefixDigits = (req.body.phonePrefixDigits || '').toString().trim();
+            const number = (value || '').toString().trim();
+            if (!number) return true;
+            if (!prefixDigits) throw new Error('Phone requires a prefix like +48');
+            return true;
+        })
 ], async (req, res) => {
     const errors = validationResult(req);
     
@@ -48,7 +61,13 @@ router.post('/register', [
     }
 
     try {
-        const { email, password, name, phone } = req.body;
+        const { email, password, name } = req.body;
+
+        const rawPrefixDigits = (req.body.phonePrefixDigits || '48').toString().trim();
+        const rawNumber = (req.body.phoneNumber || '').toString().trim();
+        const phone = (rawPrefixDigits && rawNumber)
+            ? `+${rawPrefixDigits} ${rawNumber}`.replace(/\s+/g, ' ').trim()
+            : null;
 
         const existingUser = await UserModel.findByEmail(email);
         if (existingUser) {
@@ -60,7 +79,7 @@ router.post('/register', [
             });
         }
 
-        const user = await UserModel.create(email, password, name, phone || null);
+        const user = await UserModel.create(email, password, name, phone);
         
         req.session.userId = user.id;
         req.session.userEmail = user.email;
