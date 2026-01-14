@@ -18,17 +18,111 @@
       <div class="container">
         <div class="row justify-content-center">
           <div class="col-md-8 text-center">
-            <h2 class="text-black">Thank you for your order!</h2>
-            <% if (orderId) { %>
-              <p class="mb-4">Your order number is <strong>#<%= orderId %></strong>.</p>
+            <% if (typeof accessDenied !== 'undefined' && accessDenied) { %>
+              <h2 class="text-black">Access denied</h2>
+              <p class="mb-0 text-muted">This page is only available right after placing an order.</p>
             <% } else { %>
-              <p class="mb-4">Your order has been placed.</p>
-            <% } %>
+              <h2 class="text-black">Thank you for your order!</h2>
+              <% if (errors && errors.length) { %>
+                <div class="border p-3 rounded text-left mb-4" role="alert">
+                  <strong class="text-black">Error:</strong>
+                  <ul class="mb-0 mt-2">
+                    <% errors.forEach(e => { %>
+                      <li><%= e.msg %></li>
+                    <% }) %>
+                  </ul>
+                </div>
+              <% } %>
 
-            <p class="mb-0">
-              <a href="/shop" class="btn btn-primary btn-sm">Continue shopping</a>
-              <a href="/cart" class="btn btn-outline-primary btn-sm ml-2">View cart</a>
-            </p>
+              <% if (orderId) { %>
+                <p class="mb-4">Your order number is <strong>#<%= orderId %></strong>.</p>
+              <% } else { %>
+                <p class="mb-4">Your order has been placed.</p>
+              <% } %>
+
+              <% if (order && summary) { %>
+                <div class="text-left border p-4 rounded mb-4">
+                  <h3 class="h5 text-black mb-3">Delivery</h3>
+
+                  <% if ((order.deliveryMethod || '') === 'E_DELIVERY') { %>
+                    <p class="mb-2"><strong>Type:</strong> E-delivery</p>
+                    <p class="mb-0"><strong>Email:</strong> <%= (order.user && order.user.email) ? order.user.email : '' %></p>
+                  <% } else if ((order.deliveryMethod || '') === 'COURIER') { %>
+                    <p class="mb-2"><strong>Type:</strong> Courier</p>
+                    <% const a = order.deliveryAddress; %>
+                    <% if (a) { %>
+                      <p class="mb-0"><strong>Address:</strong> <%= a.street %>, <%= a.city %>, <%= a.postalCode %>, <%= a.country %></p>
+                    <% } else { %>
+                      <p class="mb-0 text-muted">Address not available.</p>
+                    <% } %>
+                  <% } else { %>
+                    <p class="mb-0 text-muted">Delivery method not specified.</p>
+                  <% } %>
+
+                  <hr class="my-4" />
+
+                  <h3 class="h5 text-black mb-3">Order summary</h3>
+                  <table class="table mb-3">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th class="text-right">Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% summary.items.forEach((it) => { %>
+                        <tr>
+                          <td>
+                            <div><%= it.productName %></div>
+                            <% if (it.selectedAttributes && it.selectedAttributes.length) { %>
+                              <% it.selectedAttributes.forEach((a) => { %>
+                                <small class="text-muted d-block">
+                                  <%= a.attributeName || '' %>: <%= a.value %>
+                                  <% if (typeof a.priceDelta === 'number' && a.priceDelta) { %>
+                                    (<%= a.priceDelta >= 0 ? '+' : '' %><%= a.priceDelta.toFixed(2) %> PLN)
+                                  <% } %>
+                                </small>
+                              <% }) %>
+                            <% } %>
+                            <% if (it.recipientName || it.dedication) { %>
+                              <small class="text-muted d-block">
+                                <% if (it.recipientName) { %>Recipient: <%= it.recipientName %><% } %>
+                                <% if (it.dedication) { %><% if (it.recipientName) { %> | <% } %>Dedication: <%= it.dedication %><% } %>
+                              </small>
+                            <% } %>
+                          </td>
+                          <td class="text-right"><%= (Number(it.finalPrice) || 0).toFixed(2) %> PLN</td>
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+
+                  <div class="d-flex justify-content-between">
+                    <span class="text-black">Subtotal</span>
+                    <span class="text-black"><%= (Number(summary.itemsSubtotal) || 0).toFixed(2) %> PLN</span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span class="text-black">Delivery</span>
+                    <span class="text-black"><%= (Number(summary.deliveryPrice) || 0).toFixed(2) %> PLN</span>
+                  </div>
+                  <% if ((Number(summary.paymentPrice) || 0) > 0) { %>
+                    <div class="d-flex justify-content-between">
+                      <span class="text-black">Payment fee</span>
+                      <span class="text-black"><%= (Number(summary.paymentPrice) || 0).toFixed(2) %> PLN</span>
+                    </div>
+                  <% } %>
+                  <div class="d-flex justify-content-between mt-2">
+                    <strong class="text-black">Total</strong>
+                    <strong class="text-black"><%= (Number(summary.total) || 0).toFixed(2) %> PLN</strong>
+                  </div>
+                </div>
+              <% } %>
+
+              <p class="mb-0">
+                <a href="/shop" class="btn btn-primary btn-sm">Continue shopping</a>
+                <a href="/cart" class="btn btn-outline-primary btn-sm ml-2">View cart</a>
+              </p>
+            <% } %>
           </div>
         </div>
       </div>
