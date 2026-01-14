@@ -37,6 +37,7 @@ model UserAddress {
   createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+  deliveryOrders Order[] @relation("OrderDeliveryAddress")
 
   @@map("useraddress")
 }
@@ -103,6 +104,7 @@ model Banner {
 model Order {
   id             Int      @id @default(autoincrement()) @map("order_id")
   userId         Int      @map("user_id")
+  deliveryAddressId Int?  @map("delivery_address_id")
   totalPrice     Decimal  @db.Decimal(10, 2)
   status         String
   paymentMethod  String?
@@ -113,6 +115,7 @@ model Order {
   createdAt      DateTime @default(now())
 
   user  User        @relation(fields: [userId], references: [id])
+  deliveryAddress UserAddress? @relation("OrderDeliveryAddress", fields: [deliveryAddressId], references: [id])
   items OrderItem[]
 
   @@map("order")

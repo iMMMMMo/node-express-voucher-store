@@ -87,28 +87,86 @@
                         <% }) %>
                       <% } %>
                       <tr>
-                        <td class="text-black font-weight-bold"><strong>Order Total</strong></td> 
-                        <td class="text-black font-weight-bold"><strong><%= (total || 0).toFixed(2) %> PLN</strong></td>
+                        <td class="text-black font-weight-bold"><strong>Subtotal</strong></td>
+                        <td class="text-black font-weight-bold"><strong id="subtotalAmount"><%= (total || 0).toFixed(2) %> PLN</strong></td>
+                      </tr>
+                      <tr>
+                        <td class="text-black font-weight-bold"><strong>Delivery</strong></td>
+                        <td class="text-black font-weight-bold"><strong id="deliveryAmount">0.00 PLN</strong></td>
+                      </tr>
+                      <tr>
+                        <td class="text-black font-weight-bold"><strong>Order Total</strong></td>
+                        <td class="text-black font-weight-bold"><strong id="orderTotalAmount"><%= (total || 0).toFixed(2) %> PLN</strong></td>
                       </tr>
                     </tbody>
                   </table>
 
                   <form method="POST" action="/checkout">
                     <div class="form-group mb-3">
-                      <label for="paymentMethod" class="text-black">Payment Method <span class="text-danger">*</span></label>
-                      <select id="paymentMethod" name="paymentMethod" class="form-control" required>
-                        <option value="BANK_TRANSFER" <%= (formData && formData.paymentMethod === 'BANK_TRANSFER') ? 'selected' : '' %>>Bank transfer</option>
-                        <option value="CARD" <%= (formData && formData.paymentMethod === 'CARD') ? 'selected' : '' %>>Card</option>
-                        <option value="PAYPAL" <%= (formData && formData.paymentMethod === 'PAYPAL') ? 'selected' : '' %>>PayPal</option>
-                      </select>
-                    </div>
-
-                    <div class="form-group mb-4">
                       <label for="deliveryMethod" class="text-black">Delivery Method <span class="text-danger">*</span></label>
                       <select id="deliveryMethod" name="deliveryMethod" class="form-control" required>
                         <option value="E_DELIVERY" <%= (formData && formData.deliveryMethod === 'E_DELIVERY') ? 'selected' : '' %>>E-delivery (0.00 PLN)</option>
                         <option value="COURIER" <%= (formData && formData.deliveryMethod === 'COURIER') ? 'selected' : '' %>>Courier (15.00 PLN)</option>
                       </select>
+                    </div>
+
+                    <div class="form-group mb-4">
+                      <label for="paymentMethod" class="text-black">Payment Method <span class="text-danger">*</span></label>
+                      <select id="paymentMethod" name="paymentMethod" class="form-control" required>
+                        <% const dm = (formData && formData.deliveryMethod) ? formData.deliveryMethod : 'E_DELIVERY'; %>
+                        <% if (dm === 'COURIER') { %>
+                          <option value="CASH" <%= (formData && formData.paymentMethod === 'CASH') ? 'selected' : '' %>>Cash</option>
+                          <option value="CARD" <%= (formData && formData.paymentMethod === 'CARD') ? 'selected' : '' %>>Card</option>
+                        <% } else { %>
+                          <option value="BANK_TRANSFER" <%= (formData && formData.paymentMethod === 'BANK_TRANSFER') ? 'selected' : '' %>>Bank transfer</option>
+                          <option value="PAYPAL" <%= (formData && formData.paymentMethod === 'PAYPAL') ? 'selected' : '' %>>PayPal</option>
+                        <% } %>
+                      </select>
+                      <small class="text-muted d-block mt-1" id="paymentHint"></small>
+                    </div>
+
+                    <div id="courierAddressSection" class="mb-4" style="display:none;">
+                      <h4 class="h5 text-black mb-3">Delivery address</h4>
+
+                      <div class="form-group mb-3">
+                        <label for="deliveryAddressChoice" class="text-black">Choose address <span class="text-danger">*</span></label>
+                        <select id="deliveryAddressChoice" name="deliveryAddressChoice" class="form-control">
+                          <% const addrList = Array.isArray(deliveryAddresses) ? deliveryAddresses : []; %>
+                          <% if (addrList.length) { %>
+                            <% addrList.forEach((a) => { %>
+                              <option value="<%= a.id %>" <%= (formData && String(formData.deliveryAddressChoice) === String(a.id)) ? 'selected' : '' %>>
+                                <%= a.street %>, <%= a.city %>, <%= a.postalCode %>, <%= a.country %><%= a.isDefault ? ' (default)' : '' %>
+                              </option>
+                            <% }) %>
+                          <% } %>
+                          <option value="new" <%= (formData && String(formData.deliveryAddressChoice) === 'new') ? 'selected' : ((!formData || !formData.deliveryAddressChoice) ? 'selected' : '') %>>
+                            Add new address
+                          </option>
+                        </select>
+                        <small class="text-muted d-block mt-1">If you add a new address here, it will be saved to your delivery addresses.</small>
+                      </div>
+
+                      <div id="newAddressFields" class="p-3 border rounded" style="display:none;">
+                        <div class="form-group mb-3">
+                          <label for="shippingStreet" class="text-black">Street <span class="text-danger">*</span></label>
+                          <input id="shippingStreet" name="shippingStreet" type="text" class="form-control" value="<%= (formData && formData.shippingStreet) ? formData.shippingStreet : '' %>" placeholder="Street and house number">
+                        </div>
+
+                        <div class="form-group mb-3">
+                          <label for="shippingCity" class="text-black">City <span class="text-danger">*</span></label>
+                          <input id="shippingCity" name="shippingCity" type="text" class="form-control" value="<%= (formData && formData.shippingCity) ? formData.shippingCity : '' %>">
+                        </div>
+
+                        <div class="form-group mb-3">
+                          <label for="shippingPostalCode" class="text-black">Postal code <span class="text-danger">*</span></label>
+                          <input id="shippingPostalCode" name="shippingPostalCode" type="text" class="form-control postal-code" value="<%= (formData && formData.shippingPostalCode) ? formData.shippingPostalCode : '' %>" placeholder="00-000">
+                        </div>
+
+                        <div class="form-group mb-0">
+                          <label for="shippingCountry" class="text-black">Country <span class="text-danger">*</span></label>
+                          <input id="shippingCountry" name="shippingCountry" type="text" class="form-control" value="<%= (formData && formData.shippingCountry) ? formData.shippingCountry : 'Poland' %>">
+                        </div>
+                      </div>
                     </div>
 
                     <div class="form-group">
@@ -127,5 +185,88 @@
 
     <%- include('partials/footer') %>
   </div>
+
+<script>
+  (function () {
+    var deliveryMethodEl = document.getElementById('deliveryMethod');
+    var sectionEl = document.getElementById('courierAddressSection');
+    var choiceEl = document.getElementById('deliveryAddressChoice');
+    var newFieldsEl = document.getElementById('newAddressFields');
+
+    var paymentMethodEl = document.getElementById('paymentMethod');
+    var paymentHintEl = document.getElementById('paymentHint');
+    var subtotalEl = document.getElementById('subtotalAmount');
+    var deliveryAmountEl = document.getElementById('deliveryAmount');
+    var orderTotalEl = document.getElementById('orderTotalAmount');
+
+    function parsePLN(text) {
+      if (!text) return 0;
+      var cleaned = String(text).replace(/[^0-9.,-]/g, '').replace(',', '.');
+      var v = parseFloat(cleaned);
+      return Number.isFinite(v) ? v : 0;
+    }
+
+    function setPaymentOptionsForDelivery(deliveryMethod) {
+      if (!paymentMethodEl) return;
+
+      var options;
+      var hint;
+
+      if (deliveryMethod === 'COURIER') {
+        options = [
+          { value: 'CASH', label: 'Cash' },
+          { value: 'CARD', label: 'Card' }
+        ];
+        hint = 'Courier delivery supports Cash/Card.';
+      } else {
+        options = [
+          { value: 'BANK_TRANSFER', label: 'Bank transfer' },
+          { value: 'PAYPAL', label: 'PayPal' }
+        ];
+        hint = 'E-delivery supports Bank transfer/PayPal.';
+      }
+
+      var previous = paymentMethodEl.value;
+      paymentMethodEl.innerHTML = '';
+
+      options.forEach(function (opt) {
+        var o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.label;
+        paymentMethodEl.appendChild(o);
+      });
+
+      var stillExists = options.some(function (o) { return o.value === previous; });
+      paymentMethodEl.value = stillExists ? previous : options[0].value;
+
+      if (paymentHintEl) paymentHintEl.textContent = hint;
+    }
+
+    function refreshTotals(deliveryMethod) {
+      if (!subtotalEl || !deliveryAmountEl || !orderTotalEl) return;
+      var subtotal = parsePLN(subtotalEl.textContent);
+      var deliveryFee = (deliveryMethod === 'COURIER') ? 15.0 : 0.0;
+      deliveryAmountEl.textContent = deliveryFee.toFixed(2) + ' PLN';
+      orderTotalEl.textContent = (subtotal + deliveryFee).toFixed(2) + ' PLN';
+    }
+
+    function refresh() {
+      if (!deliveryMethodEl || !sectionEl) return;
+      var isCourier = deliveryMethodEl.value === 'COURIER';
+      sectionEl.style.display = isCourier ? '' : 'none';
+
+      if (!choiceEl || !newFieldsEl) return;
+      var isNew = choiceEl.value === 'new';
+      newFieldsEl.style.display = (isCourier && isNew) ? '' : 'none';
+
+      setPaymentOptionsForDelivery(deliveryMethodEl.value);
+      refreshTotals(deliveryMethodEl.value);
+    }
+
+    if (deliveryMethodEl) deliveryMethodEl.addEventListener('change', refresh);
+    if (choiceEl) choiceEl.addEventListener('change', refresh);
+    refresh();
+  })();
+</script>
 
 <%- include('partials/scripts') %>

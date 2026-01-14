@@ -88,6 +88,16 @@ const repairCartPrices = async (cart) => {
 
 router.use(attachUser);
 
+const normalizeText = (value) => (value ?? '').toString().trim();
+
+const validatePostalCode = (postalCode, countryRaw) => {
+    const country = normalizeText(countryRaw);
+    const pc = normalizeText(postalCode);
+    const isPL = /^(pl|poland|polska)$/i.test(country);
+    if (isPL) return /^\d{2}-\d{3}$/.test(pc);
+    return /^[A-Za-z0-9\s-]{2,15}$/.test(pc);
+};
+
 router.get('/', (req, res) => {
     res.render('index', { 
         title: 'Home | Voucher Shop', 
@@ -188,6 +198,19 @@ router.get('/checkout', authRequired, (req, res) => {
             console.error('Error repairing checkout cart prices:', error);
         }
 
+        let deliveryAddresses = [];
+        try {
+            deliveryAddresses = await prisma.userAddress.findMany({
+                where: { userId: req.session.userId, type: 'delivery' },
+                orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }]
+            });
+        } catch (error) {
+            console.error('Error fetching delivery addresses for checkout:', error);
+        }
+
+        const defaultAddress = deliveryAddresses.find((a) => a && a.isDefault) || null;
+        const defaultChoice = defaultAddress ? String(defaultAddress.id) : 'new';
+
         const total = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.quantity) || 0)), 0);
 
         res.render('checkout', {
@@ -196,9 +219,15 @@ router.get('/checkout', authRequired, (req, res) => {
             cart,
             total,
             errors: null,
+            deliveryAddresses,
             formData: {
                 paymentMethod: 'BANK_TRANSFER',
-                deliveryMethod: 'E_DELIVERY'
+                deliveryMethod: 'E_DELIVERY',
+                deliveryAddressChoice: defaultChoice,
+                shippingStreet: defaultAddress?.street || '',
+                shippingCity: defaultAddress?.city || '',
+                shippingPostalCode: defaultAddress?.postalCode || '',
+                shippingCountry: defaultAddress?.country || 'Poland'
             }
         });
     })();
@@ -212,19 +241,69 @@ router.post('/checkout', authRequired, async (req, res) => {
 
     const paymentMethod = (req.body.paymentMethod || '').trim();
     const deliveryMethod = (req.body.deliveryMethod || '').trim();
-    const allowedPayment = new Set(['BANK_TRANSFER', 'CARD', 'PAYPAL']);
     const allowedDelivery = new Set(['E_DELIVERY', 'COURIER']);
 
     const errors = [];
-    if (!allowedPayment.has(paymentMethod)) {
-        errors.push({ msg: 'Please select a valid payment method.' });
-    }
     if (!allowedDelivery.has(deliveryMethod)) {
         errors.push({ msg: 'Please select a valid delivery method.' });
     }
 
+    const allowedPaymentByDelivery = {
+        E_DELIVERY: new Set(['BANK_TRANSFER', 'PAYPAL']),
+        COURIER: new Set(['CASH', 'CARD']),
+    };
+    const allowedPayment = allowedPaymentByDelivery[deliveryMethod] || new Set();
+    if (!allowedPayment.has(paymentMethod)) {
+        errors.push({ msg: 'Please select a valid payment method for the chosen delivery method.' });
+    }
+
+    const deliveryAddressChoice = normalizeText(req.body.deliveryAddressChoice);
+    const shippingStreet = normalizeText(req.body.shippingStreet);
+    const shippingCity = normalizeText(req.body.shippingCity);
+    const shippingPostalCode = normalizeText(req.body.shippingPostalCode);
+    const shippingCountry = normalizeText(req.body.shippingCountry);
+
     const deliveryPriceNumber = deliveryMethod === 'COURIER' ? 15.0 : 0.0;
     const paymentPriceNumber = 0.0;
+
+    let deliveryAddresses = [];
+    try {
+        deliveryAddresses = await prisma.userAddress.findMany({
+            where: { userId: req.session.userId, type: 'delivery' },
+            orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }]
+        });
+    } catch (error) {
+        console.error('Error fetching delivery addresses for checkout:', error);
+    }
+
+    let deliveryAddressId = null;
+    if (deliveryMethod === 'COURIER') {
+        const chosenId = Number.parseInt(deliveryAddressChoice, 10);
+        const choosingExisting = Number.isFinite(chosenId) && chosenId > 0;
+
+        if (choosingExisting) {
+            const owned = deliveryAddresses.find((a) => a && a.id === chosenId);
+            if (!owned) {
+                errors.push({ msg: 'Please select a valid delivery address.' });
+            } else {
+                deliveryAddressId = owned.id;
+            }
+        } else {
+            if (shippingStreet.length < 3 || shippingStreet.length > 120) {
+                errors.push({ msg: 'Street is required (3–120 chars).' });
+            }
+            if (shippingCity.length < 2 || shippingCity.length > 80) {
+                errors.push({ msg: 'City is required (2–80 chars).' });
+            }
+            if (shippingCountry.length < 2 || shippingCountry.length > 80) {
+                errors.push({ msg: 'Country is required (2–80 chars).' });
+            }
+            if (!validatePostalCode(shippingPostalCode, shippingCountry)) {
+                const isPL = /^(pl|poland|polska)$/i.test(shippingCountry);
+                errors.push({ msg: isPL ? 'Postal code must be in format 00-000 (PL).' : 'Postal code must be 2–15 chars (letters/numbers/spaces/-).' });
+            }
+        }
+    }
 
     if (errors.length) {
         const total = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.quantity) || 0)), 0)
@@ -235,11 +314,35 @@ router.post('/checkout', authRequired, async (req, res) => {
             cart,
             total,
             errors,
-            formData: { paymentMethod, deliveryMethod }
+            deliveryAddresses,
+            formData: {
+                paymentMethod,
+                deliveryMethod,
+                deliveryAddressChoice: deliveryAddressChoice || 'new',
+                shippingStreet,
+                shippingCity,
+                shippingPostalCode,
+                shippingCountry
+            }
         });
     }
 
     try {
+        if (deliveryMethod === 'COURIER' && !deliveryAddressId) {
+            const created = await prisma.userAddress.create({
+                data: {
+                    userId: req.session.userId,
+                    street: shippingStreet,
+                    city: shippingCity,
+                    postalCode: shippingPostalCode,
+                    country: shippingCountry,
+                    type: 'delivery',
+                    isDefault: false,
+                }
+            });
+            deliveryAddressId = created.id;
+        }
+
         const slugs = cart.map(i => i.slug).filter(Boolean);
         const products = await prisma.product.findMany({
             where: { slug: { in: slugs } },
@@ -353,6 +456,7 @@ router.post('/checkout', authRequired, async (req, res) => {
             const createdOrder = await tx.order.create({
                 data: {
                     userId: req.session.userId,
+                    deliveryAddressId: deliveryMethod === 'COURIER' ? deliveryAddressId : null,
                     totalPrice: new Prisma.Decimal(total.toFixed(2)),
                     status: 'PLACED',
                     paymentMethod,
@@ -398,22 +502,127 @@ router.post('/checkout', authRequired, async (req, res) => {
             cart,
             total,
             errors: [{ msg: 'Could not place order. Please try again.' }],
-            formData: { paymentMethod, deliveryMethod }
+            deliveryAddresses,
+            formData: {
+                paymentMethod,
+                deliveryMethod,
+                deliveryAddressChoice: deliveryAddressChoice || 'new',
+                shippingStreet,
+                shippingCity,
+                shippingPostalCode,
+                shippingCountry
+            }
         });
     }
 });
 
-router.get('/thankyou', (req, res) => {
-    const orderId = req.session.lastOrderId || null;
-    if (req.session.lastOrderId) {
-        delete req.session.lastOrderId;
+router.get('/thankyou', authRequired, async (req, res) => {
+    if (!req.session.lastOrderId) {
+        return res.status(403).render('thankyou', {
+            title: 'Thank you | Voucher Shop',
+            activePage: '',
+            accessDenied: true,
+            orderId: null,
+            order: null,
+            summary: null,
+            errors: [{ msg: 'Access denied. This page is only available right after placing an order.' }],
+        });
     }
 
-    res.render('thankyou', {
-        title: 'Thank you | Voucher Shop',
-        activePage: '',
-        orderId
-    });
+    const orderId = req.session.lastOrderId;
+
+    const decimalToNumber = (d) => {
+        if (d === null || typeof d === 'undefined') return 0;
+        if (typeof d === 'number') return d;
+        if (typeof d === 'string') {
+            const n = Number.parseFloat(d);
+            return Number.isFinite(n) ? n : 0;
+        }
+        if (typeof d.toString === 'function') {
+            const n = Number.parseFloat(d.toString());
+            return Number.isFinite(n) ? n : 0;
+        }
+        return 0;
+    };
+
+    try {
+        const order = await prisma.order.findFirst({
+            where: { id: Number(orderId), userId: req.session.userId },
+            include: {
+                user: { select: { email: true, name: true } },
+                deliveryAddress: true,
+                items: {
+                    include: {
+                        product: { select: { name: true, slug: true } }
+                    },
+                    orderBy: { id: 'asc' }
+                }
+            }
+        });
+
+        if (!order) {
+            return res.status(404).render('thankyou', {
+                title: 'Thank you | Voucher Shop',
+                activePage: '',
+                accessDenied: false,
+                orderId,
+                order: null,
+                summary: null,
+                errors: [{ msg: 'Order not found.' }],
+            });
+        }
+
+        const items = Array.isArray(order.items) ? order.items : [];
+        const itemsSubtotal = items.reduce((sum, it) => {
+            const qty = Number.parseInt(it.quantity, 10) || 0;
+            const price = decimalToNumber(it.finalPrice);
+            return sum + (qty * price);
+        }, 0);
+        const deliveryPrice = decimalToNumber(order.deliveryPrice);
+        const paymentPrice = decimalToNumber(order.paymentPrice);
+        const total = decimalToNumber(order.totalPrice);
+
+        const summary = {
+            itemsSubtotal,
+            deliveryPrice,
+            paymentPrice,
+            total,
+            items: items.map((it) => ({
+                id: it.id,
+                productName: it.product?.name || 'Product',
+                productSlug: it.product?.slug || null,
+                quantity: Number.parseInt(it.quantity, 10) || 0,
+                unitPrice: decimalToNumber(it.unitPrice),
+                finalPrice: decimalToNumber(it.finalPrice),
+                recipientName: it.recipientName || null,
+                dedication: it.dedication || null,
+                selectedAttributes: it.selectedAttributes || null,
+            }))
+        };
+
+        delete req.session.lastOrderId;
+
+        res.render('thankyou', {
+            title: 'Thank you | Voucher Shop',
+            activePage: '',
+            accessDenied: false,
+            orderId: order.id,
+            order,
+            summary,
+            errors: null,
+        });
+    } catch (error) {
+        console.error('Error loading thankyou summary:', error);
+        res.status(500).render('thankyou', {
+            title: 'Thank you | Voucher Shop',
+            activePage: '',
+            accessDenied: false,
+            orderId,
+            order: null,
+            summary: null,
+            errors: [{ msg: 'Could not load order summary. Please try again.' }],
+        });
+    }
 });
 
 router.get('/about', (req, res) => {
