@@ -1,0 +1,134 @@
+<%- include('partials/head', { title: title }) %>
+<body>
+
+  <div class="site-wrap">
+    <%- include('partials/header', { activePage: activePage }) %>
+
+    <div class="bg-light py-3">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12 mb-0"><a href="/">Home</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">Delivery addresses</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-section">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <h2 class="h3 mb-3 text-black">Delivery addresses</h2>
+          </div>
+
+          <div class="col-md-8">
+            <% if (success) { %>
+              <div class="alert alert-success"><%= success %></div>
+            <% } %>
+
+            <% if (errors && errors.length > 0) { %>
+              <div class="alert alert-danger">
+                <ul class="mb-0">
+                  <% errors.forEach(error => { %>
+                    <li><%= error.msg %></li>
+                  <% }); %>
+                </ul>
+              </div>
+            <% } %>
+
+            <div class="p-3 p-lg-5 border mb-4">
+              <h3 class="h5 text-black mb-3">Add new address</h3>
+              <form action="/addresses" method="post">
+                <div class="form-group row">
+                  <div class="col-md-12">
+                    <label for="street" class="text-black">Street <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="street" name="street" value="<%= (formData && formData.street) ? formData.street : '' %>" required>
+                  </div>
+                </div>
+
+                <div class="form-group row">
+                  <div class="col-md-6">
+                    <label for="city" class="text-black">City <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="city" name="city" value="<%= (formData && formData.city) ? formData.city : '' %>" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="postalCode" class="text-black">Postal code <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="postalCode" name="postalCode" placeholder="00-000" value="<%= (formData && formData.postalCode) ? formData.postalCode : '' %>" required>
+                    <small class="form-text text-muted">For Poland use format 00-000.</small>
+                  </div>
+                </div>
+
+                <div class="form-group row">
+                  <div class="col-md-12">
+                    <label for="country" class="text-black">Country <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="country" name="country" value="<%= (formData && formData.country) ? formData.country : 'Poland' %>" required>
+                  </div>
+                </div>
+
+                <div class="form-group row">
+                  <div class="col-md-12">
+                    <label class="text-black">
+                      <input type="checkbox" name="isDefault" value="true" <%= (formData && formData.isDefault) ? 'checked' : '' %>>
+                      Set as default
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-group row">
+                  <div class="col-lg-12">
+                    <input type="submit" class="btn btn-primary btn-lg btn-block" value="Add address">
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div class="p-3 p-lg-5 border">
+              <h3 class="h5 text-black mb-3">Saved addresses</h3>
+
+              <% if (!addresses || addresses.length === 0) { %>
+                <p class="mb-0">No delivery addresses yet.</p>
+              <% } else { %>
+                <div class="list-group">
+                  <% addresses.forEach(a => { %>
+                    <div class="list-group-item">
+                      <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                          <div class="d-flex align-items-center">
+                            <strong class="mr-2"><%= a.street %></strong>
+                            <% if (a.isDefault) { %>
+                              <span class="badge badge-success">Default</span>
+                            <% } %>
+                          </div>
+                          <div class="text-muted"><%= a.postalCode %>, <%= a.city %>, <%= a.country %></div>
+                        </div>
+                        <div class="text-right">
+                          <a href="/addresses/<%= a.id %>/edit" class="btn btn-sm btn-outline-secondary">Edit</a>
+                          <% if (!a.isDefault) { %>
+                            <form action="/addresses/<%= a.id %>/default" method="post" style="display:inline;">
+                              <button type="submit" class="btn btn-sm btn-outline-primary">Set default</button>
+                            </form>
+                          <% } %>
+                          <form action="/addresses/<%= a.id %>/delete" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  <% }); %>
+                </div>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="p-3 p-lg-5 border">
+              <h3 class="h5 text-black mb-3">Tips</h3>
+              <p class="mb-0">You can mark one address as default to use it as your primary delivery address.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('partials/footer') %>
+  </div>
+
+<%- include('partials/scripts') %>

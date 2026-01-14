@@ -1,0 +1,98 @@
+<%- include('partials/head', { title: title }) %>
+<body>
+
+  <div class="site-wrap">
+    <%- include('partials/header', { activePage: activePage }) %>
+
+    <div class="bg-light py-3">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12 mb-0">
+            <a href="/">Home</a> <span class="mx-2 mb-0">/</span>
+            <a href="/addresses">Delivery addresses</a> <span class="mx-2 mb-0">/</span>
+            <strong class="text-black">Edit</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-section">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <h2 class="h3 mb-3 text-black">Edit delivery address</h2>
+          </div>
+
+          <div class="col-md-8">
+            <% if (errors && errors.length > 0) { %>
+              <div class="alert alert-danger">
+                <ul class="mb-0">
+                  <% errors.forEach(error => { %>
+                    <li><%= error.msg %></li>
+                  <% }); %>
+                </ul>
+              </div>
+            <% } %>
+
+            <div class="p-3 p-lg-5 border">
+              <form action="/addresses/<%= address.id %>/edit" method="post">
+                <div class="form-group row">
+                  <div class="col-md-12">
+                    <label for="street" class="text-black">Street <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="street" name="street" value="<%= (formData && formData.street) ? formData.street : '' %>" required>
+                  </div>
+                </div>
+
+                <div class="form-group row">
+                  <div class="col-md-6">
+                    <label for="city" class="text-black">City <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="city" name="city" value="<%= (formData && formData.city) ? formData.city : '' %>" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="postalCode" class="text-black">Postal code <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="postalCode" name="postalCode" placeholder="00-000" value="<%= (formData && formData.postalCode) ? formData.postalCode : '' %>" required>
+                    <small class="form-text text-muted">For Poland use format 00-000.</small>
+                  </div>
+                </div>
+
+                <div class="form-group row">
+                  <div class="col-md-12">
+                    <label for="country" class="text-black">Country <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="country" name="country" value="<%= (formData && formData.country) ? formData.country : '' %>" required>
+                  </div>
+                </div>
+
+                <div class="form-group row">
+                  <div class="col-md-12">
+                    <label class="text-black">
+                      <input type="checkbox" name="isDefault" value="true" <%= (formData && formData.isDefault) ? 'checked' : '' %>>
+                      Set as default
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-group row">
+                  <div class="col-lg-12 d-flex justify-content-between">
+                    <a href="/addresses" class="btn btn-outline-secondary">Back</a>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="p-3 p-lg-5 border">
+              <h3 class="h5 text-black mb-3">Current</h3>
+              <p class="mb-2"><strong><%= address.street %></strong></p>
+              <p class="mb-0" class="text-muted"><%= address.postalCode %>, <%= address.city %>, <%= address.country %></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('partials/footer') %>
+  </div>
+
+<%- include('partials/scripts') %>
