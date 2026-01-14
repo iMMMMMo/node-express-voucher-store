@@ -177,6 +177,15 @@ a {
     display: inline-block; }
     .site-navbar .site-top-icons ul li a {
       margin-right: 10px; }
+  .site-navbar .site-top-icons .dropdown-toggle::after {
+    display: none; }
+  .site-navbar .site-top-icons .dropdown-header {
+    color: #9aa0a6;
+    font-weight: 400; }
+  .site-navbar .site-top-icons .dropdown-item .icon {
+    margin-right: 8px;
+    position: relative;
+    top: 1px; }
       .site-navbar .site-top-icons ul li a.site-cart {
         display: block;
         position: relative; }
