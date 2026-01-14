@@ -37,12 +37,14 @@ app.use(session({
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
+const accountRoutes = require('./routes/account');
 const productApiRoutes = require('./routes/api/products');
 const cartApiRoutes = require('./routes/api/cart');
 
 app.use("/admin", adminRoutes);
 app.use('/', shopRoutes);
 app.use('/', authRoutes);
+app.use('/', accountRoutes);
 app.use('/api/products', productApiRoutes);
 app.use('/api/cart', cartApiRoutes);
 
