@@ -1,0 +1,138 @@
+<%- include('partials/head', { title: title || 'Order details | Voucher Shop' }) %>
+<body>
+
+  <div class="site-wrap">
+    <%- include('partials/header', { activePage: '' }) %>
+
+    <div class="bg-light py-3">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12 mb-0">
+            <a href="/">Home</a> <span class="mx-2 mb-0">/</span>
+            <a href="/orders">My orders</a> <span class="mx-2 mb-0">/</span>
+            <strong class="text-black">Order details</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-section">
+      <div class="container">
+        <div class="row mb-4">
+          <div class="col-12">
+            <h2 class="text-black h5">Order details</h2>
+          </div>
+        </div>
+
+        <% if (errors && errors.length) { %>
+          <div class="row mb-4">
+            <div class="col-md-12">
+              <div class="border p-4 rounded" role="alert">
+                <strong class="text-black">Error:</strong>
+                <ul class="mb-0 mt-2">
+                  <% errors.forEach(e => { %>
+                    <li><%= e.msg %></li>
+                  <% }) %>
+                </ul>
+              </div>
+            </div>
+          </div>
+        <% } %>
+
+        <% if (order && summary) { %>
+          <div class="row">
+            <div class="col-md-12 mb-4">
+              <div class="border p-4 rounded">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong class="text-black">Order #<%= order.id %></strong>
+                    <div class="text-muted"><%= order.createdAt ? new Date(order.createdAt).toLocaleString('pl-PL') : '' %></div>
+                  </div>
+                  <a href="/orders" class="btn btn-outline-primary btn-sm">Back to orders</a>
+                </div>
+
+                <hr class="my-4" />
+
+                <h3 class="h5 text-black mb-3">Delivery</h3>
+                <% if ((order.deliveryMethod || '') === 'E_DELIVERY') { %>
+                  <p class="mb-2"><strong>Type:</strong> E-delivery</p>
+                  <p class="mb-0"><strong>Email:</strong> <%= (order.user && order.user.email) ? order.user.email : '' %></p>
+                <% } else if ((order.deliveryMethod || '') === 'COURIER') { %>
+                  <p class="mb-2"><strong>Type:</strong> Courier</p>
+                  <% const a = order.deliveryAddress; %>
+                  <% if (a) { %>
+                    <p class="mb-0"><strong>Address:</strong> <%= a.street %>, <%= a.city %>, <%= a.postalCode %>, <%= a.country %></p>
+                  <% } else { %>
+                    <p class="mb-0 text-muted">Address not available.</p>
+                  <% } %>
+                <% } else { %>
+                  <p class="mb-0 text-muted">Delivery method not specified.</p>
+                <% } %>
+
+                <hr class="my-4" />
+
+                <h3 class="h5 text-black mb-3">Items</h3>
+                <table class="table mb-3">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th class="text-right">Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% summary.items.forEach((it) => { %>
+                      <tr>
+                        <td>
+                          <div><%= it.productName %></div>
+                          <% if (it.selectedAttributes && it.selectedAttributes.length) { %>
+                            <% it.selectedAttributes.forEach((a) => { %>
+                              <small class="text-muted d-block">
+                                <%= a.attributeName || '' %>: <%= a.value %>
+                                <% if (typeof a.priceDelta === 'number' && a.priceDelta) { %>
+                                  (<%= a.priceDelta >= 0 ? '+' : '' %><%= a.priceDelta.toFixed(2) %> PLN)
+                                <% } %>
+                              </small>
+                            <% }) %>
+                          <% } %>
+                          <% if (it.recipientName || it.dedication) { %>
+                            <small class="text-muted d-block">
+                              <% if (it.recipientName) { %>Recipient: <%= it.recipientName %><% } %>
+                              <% if (it.dedication) { %><% if (it.recipientName) { %> | <% } %>Dedication: <%= it.dedication %><% } %>
+                            </small>
+                          <% } %>
+                        </td>
+                        <td class="text-right"><%= (Number(it.finalPrice) || 0).toFixed(2) %> PLN</td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+
+                <div class="d-flex justify-content-between">
+                  <span class="text-black">Subtotal</span>
+                  <span class="text-black"><%= (Number(summary.itemsSubtotal) || 0).toFixed(2) %> PLN</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span class="text-black">Delivery</span>
+                  <span class="text-black"><%= (Number(summary.deliveryPrice) || 0).toFixed(2) %> PLN</span>
+                </div>
+                <% if ((Number(summary.paymentPrice) || 0) > 0) { %>
+                  <div class="d-flex justify-content-between">
+                    <span class="text-black">Payment fee</span>
+                    <span class="text-black"><%= (Number(summary.paymentPrice) || 0).toFixed(2) %> PLN</span>
+                  </div>
+                <% } %>
+                <div class="d-flex justify-content-between mt-2">
+                  <strong class="text-black">Total</strong>
+                  <strong class="text-black"><%= (Number(summary.total) || 0).toFixed(2) %> PLN</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <%- include('partials/footer') %>
+  </div>
+
+  <%- include('partials/scripts') %>

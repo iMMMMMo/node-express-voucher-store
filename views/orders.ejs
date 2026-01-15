@@ -1,0 +1,86 @@
+<%- include('partials/head', { title: 'My Orders | Voucher Shop' }) %>
+<body>
+
+  <div class="site-wrap">
+    <%- include('partials/header', { activePage: '' }) %>
+
+    <div class="bg-light py-3">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12 mb-0"><a href="/">Home</a> <span class="mx-2 mb-0">/</span> <strong class="text-black">My orders</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="site-section">
+      <div class="container">
+        <div class="row mb-4">
+          <div class="col-12">
+            <h2 class="text-black h5">My orders</h2>
+          </div>
+        </div>
+
+        <% if (errors && errors.length) { %>
+          <div class="row mb-4">
+            <div class="col-md-12">
+              <div class="border p-4 rounded" role="alert">
+                <strong class="text-black">Error:</strong>
+                <ul class="mb-0 mt-2">
+                  <% errors.forEach(e => { %>
+                    <li><%= e.msg %></li>
+                  <% }) %>
+                </ul>
+              </div>
+            </div>
+          </div>
+        <% } %>
+
+        <div class="row">
+          <div class="col-md-12">
+            <% if (orders && orders.length) { %>
+              <div class="site-blocks-table">
+                <table class="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Order</th>
+                      <th>Date</th>
+                      <th>Delivery</th>
+                      <th>Payment</th>
+                      <th>Status</th>
+                      <th class="text-right">Total</th>
+                      <th>Items</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% orders.forEach((o) => { %>
+                      <tr>
+                        <td><strong>#<%= o.id %></strong></td>
+                        <td><%= o.createdAt ? new Date(o.createdAt).toLocaleString('pl-PL') : '' %></td>
+                        <td><%= (o.deliveryMethod || '').replace('_', ' ') %></td>
+                        <td><%= (o.paymentMethod || '').replace('_', ' ') %></td>
+                        <td><%= o.status || '' %><% if (o.paymentStatus) { %> (<%= o.paymentStatus %>)<% } %></td>
+                        <td class="text-right"><%= (Number(o.totalPrice) || 0).toFixed(2) %> PLN</td>
+                        <td><%= o.itemsCount %></td>
+                        <td>
+                          <a href="/orders/<%= o.id %>" class="btn btn-outline-primary btn-sm">Details</a>
+                        </td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            <% } else { %>
+              <div class="border p-4 rounded">
+                <p class="mb-0">You don't have any orders yet.</p>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('partials/footer') %>
+  </div>
+
+  <%- include('partials/scripts') %>
