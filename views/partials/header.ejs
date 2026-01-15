@@ -25,6 +25,7 @@
                                         <h6 class="dropdown-header">Logged As: <%= userName %></h6>
                                         <div class="dropdown-divider"></div>
                                         <a class="dropdown-item" href="/account"><span class="icon icon-id-card"></span> Account</a>
+                                        <a class="dropdown-item" href="/orders"><span class="icon icon-shopping_cart"></span> Orders</a>
                                         <a class="dropdown-item" href="/addresses"><span class="icon icon-map-marker"></span> Delivery addresses</a>
                                         <% if (typeof userRole !== 'undefined' && userRole === 'admin') { %>
                                             <a class="dropdown-item" href="/admin" target="_blank" rel="noopener noreferrer"><span class="icon icon-gear"></span> Admin panel</a>
