@@ -1,0 +1,187 @@
+<%
+  const order = (viewData && viewData.order) ? viewData.order : null;
+  const summary = (viewData && viewData.summary) ? viewData.summary : null;
+  const errors = (viewData && viewData.errors) ? viewData.errors : null;
+%>
+
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <h3 class="mb-0">Order details</h3>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+          <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="/admin/orders">Orders</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Details</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+    <% if (errors && errors.length) { %>
+      <div class="alert alert-danger" role="alert">
+        <div class="fw-semibold">Error</div>
+        <ul class="mb-0 mt-2">
+          <% errors.forEach(e => { %>
+            <li><%= e.msg %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+
+    <% if (order && summary) { %>
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="card-title mb-0">Order #<%= order.id %></h3>
+          <a href="/admin/orders" class="btn btn-outline-primary btn-sm">Back to list</a>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="text-muted">Created</div>
+              <div><%= order.createdAt ? new Date(order.createdAt).toLocaleString('pl-PL') : '' %></div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-muted">Status</div>
+              <div><%= order.status || '' %></div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-muted">User</div>
+              <div>
+                <% if (order.user) { %>
+                  <div class="fw-semibold"><%= order.user.email %></div>
+                  <% if (order.user.name) { %>
+                    <div class="text-muted small"><%= order.user.name %></div>
+                  <% } %>
+                <% } else { %>
+                  <span class="text-muted">—</span>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <hr />
+
+          <div class="row">
+            <div class="col-md-6">
+              <h5 class="mb-2">Delivery</h5>
+              <% if ((order.deliveryMethod || '') === 'E_DELIVERY') { %>
+                <div><strong>Type:</strong> E-delivery</div>
+                <div class="text-muted"><strong>Email:</strong> <%= (order.user && order.user.email) ? order.user.email : '' %></div>
+              <% } else if ((order.deliveryMethod || '') === 'COURIER') { %>
+                <div><strong>Type:</strong> Courier</div>
+                <% const a = order.deliveryAddress; %>
+                <% if (a) { %>
+                  <div class="text-muted"><strong>Address:</strong> <%= a.street %>, <%= a.city %>, <%= a.postalCode %>, <%= a.country %></div>
+                <% } else { %>
+                  <div class="text-muted">Address not available.</div>
+                <% } %>
+              <% } else { %>
+                <div class="text-muted">Delivery method not specified.</div>
+              <% } %>
+            </div>
+
+            <div class="col-md-6">
+              <h5 class="mb-2">Payment</h5>
+              <div><strong>Method:</strong> <%= (order.paymentMethod || '').replace('_', ' ') %></div>
+              <div class="text-muted"><strong>Status:</strong> <%= order.paymentStatus || '—' %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0">Items</h3>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-striped mb-0">
+              <thead>
+                <tr>
+                  <th style="width: 90px;">Item ID</th>
+                  <th>Product</th>
+                  <th style="width: 90px;" class="text-center">Qty</th>
+                  <th style="width: 140px;" class="text-end">Unit</th>
+                  <th style="width: 160px;" class="text-end">Final</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!summary.items || !summary.items.length) { %>
+                  <tr>
+                    <td colspan="5" class="text-center text-muted py-4">No items found.</td>
+                  </tr>
+                <% } %>
+
+                <% (summary.items || []).forEach((it) => { %>
+                  <tr>
+                    <td><%= it.id %></td>
+                    <td>
+                      <div class="fw-semibold"><%= it.productName %></div>
+                      <% if (it.productSlug) { %>
+                        <div class="small"><a href="/shop-single/<%= it.productSlug %>" target="_blank" rel="noopener noreferrer">View product</a></div>
+                      <% } %>
+
+                      <% if (it.selectedAttributes && it.selectedAttributes.length) { %>
+                        <% it.selectedAttributes.forEach((a) => { %>
+                          <div class="text-muted small">
+                            <%= a.attributeName || '' %>: <%= a.value %>
+                            <% if (typeof a.priceDelta === 'number' && a.priceDelta) { %>
+                              (<%= a.priceDelta >= 0 ? '+' : '' %><%= a.priceDelta.toFixed(2) %> PLN)
+                            <% } %>
+                          </div>
+                        <% }) %>
+                      <% } %>
+
+                      <% if (it.recipientName || it.dedication) { %>
+                        <div class="text-muted small">
+                          <% if (it.recipientName) { %>Recipient: <%= it.recipientName %><% } %>
+                          <% if (it.dedication) { %><% if (it.recipientName) { %> | <% } %>Dedication: <%= it.dedication %><% } %>
+                        </div>
+                      <% } %>
+                    </td>
+                    <td class="text-center"><%= it.quantity %></td>
+                    <td class="text-end"><%= (Number(it.unitPrice) || 0).toFixed(2) %> PLN</td>
+                    <td class="text-end"><%= (Number(it.finalPrice) || 0).toFixed(2) %> PLN</td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title mb-0">Summary</h3>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <span>Items subtotal</span>
+            <span><%= (Number(summary.itemsSubtotal) || 0).toFixed(2) %> PLN</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span>Delivery</span>
+            <span><%= (Number(summary.deliveryPrice) || 0).toFixed(2) %> PLN</span>
+          </div>
+          <% if ((Number(summary.paymentPrice) || 0) > 0) { %>
+            <div class="d-flex justify-content-between">
+              <span>Payment fee</span>
+              <span><%= (Number(summary.paymentPrice) || 0).toFixed(2) %> PLN</span>
+            </div>
+          <% } %>
+          <hr />
+          <div class="d-flex justify-content-between">
+            <strong>Total</strong>
+            <strong><%= (Number(summary.total) || 0).toFixed(2) %> PLN</strong>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</div>

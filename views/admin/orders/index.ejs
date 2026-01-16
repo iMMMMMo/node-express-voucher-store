@@ -1,0 +1,90 @@
+<%
+  const orders = (viewData && viewData.orders) ? viewData.orders : [];
+%>
+
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <h3 class="mb-0">Orders</h3>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+          <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Orders</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+    <% if (viewData && viewData.error) { %>
+      <div class="alert alert-danger" role="alert"><%= viewData.error %></div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Orders list</h3>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped mb-0">
+            <thead>
+              <tr>
+                <th style="width: 90px;">ID</th>
+                <th style="width: 200px;">Date</th>
+                <th>User</th>
+                <th style="width: 140px;">Delivery</th>
+                <th style="width: 160px;">Payment</th>
+                <th style="width: 180px;">Status</th>
+                <th style="width: 140px;" class="text-end">Total</th>
+                <th style="width: 90px;" class="text-center">Items</th>
+                <th style="width: 120px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!orders.length) { %>
+                <tr>
+                  <td colspan="9" class="text-center text-muted py-4">No orders found.</td>
+                </tr>
+              <% } %>
+
+              <% orders.forEach((o) => { %>
+                <tr>
+                  <td><strong>#<%= o.id %></strong></td>
+                  <td><%= o.createdAt ? new Date(o.createdAt).toLocaleString('pl-PL') : '' %></td>
+                  <td>
+                    <% if (o.user) { %>
+                      <div class="fw-semibold"><%= o.user.email %></div>
+                      <% if (o.user.name) { %>
+                        <div class="text-muted small"><%= o.user.name %></div>
+                      <% } %>
+                    <% } else { %>
+                      <span class="text-muted">—</span>
+                    <% } %>
+                  </td>
+                  <td><%= (o.deliveryMethod || '').replace('_', ' ') %></td>
+                  <td>
+                    <%= (o.paymentMethod || '').replace('_', ' ') %>
+                    <% if (o.paymentStatus) { %>
+                      <div class="text-muted small"><%= o.paymentStatus %></div>
+                    <% } %>
+                  </td>
+                  <td><%= o.status || '' %></td>
+                  <td class="text-end"><%= (Number(o.totalPrice) || 0).toFixed(2) %> PLN</td>
+                  <td class="text-center"><%= o.itemsCount %></td>
+                  <td>
+                    <a href="/admin/orders/<%= o.id %>" class="btn btn-outline-primary btn-sm">Details</a>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
