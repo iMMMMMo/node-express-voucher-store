@@ -478,7 +478,7 @@ router.post('/checkout', authRequired, async (req, res) => {
                                     selectedAttributes: it.selectedAttributes && it.selectedAttributes.length ? it.selectedAttributes : null,
                                     recipientName: rec?.recipientName ?? null,
                                     dedication: rec?.dedication ?? null,
-                                    status: 'NEW'
+                                    status: 'ACTIVE'
                                 });
                             }
                             return perUnit;

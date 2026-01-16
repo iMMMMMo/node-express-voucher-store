@@ -132,7 +132,7 @@ model OrderItem {
   vat                Decimal? @map("VAT") @db.Decimal(4, 2)
   finalPrice         Decimal  @db.Decimal(10, 2)
   selectedAttributes Json?
-  status             String?
+  status             String   @default("ACTIVE")
 
   order   Order   @relation(fields: [orderId], references: [id])
   product Product @relation(fields: [productId], references: [id])
