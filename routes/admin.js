@@ -6,11 +6,13 @@ const adminPagesRoutes = require("./admin/pages");
 const adminProductsRoutes = require("./admin/products");
 const adminAttributesRoutes = require("./admin/attributes");
 const adminOrdersRoutes = require("./admin/orders");
+const adminBannersRoutes = require("./admin/banners");
 
 router.use(attachUser);
 router.use(adminRequired);
 
 router.use("/pages", adminPagesRoutes);
+router.use("/banners", adminBannersRoutes);
 router.use("/products", adminProductsRoutes);
 router.use("/attributes", adminAttributesRoutes);
 router.use("/orders", adminOrdersRoutes);
