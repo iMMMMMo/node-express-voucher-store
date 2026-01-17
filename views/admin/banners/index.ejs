@@ -1,0 +1,116 @@
+<%
+  const banners = (viewData && viewData.banners) ? viewData.banners : [];
+%>
+
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <h3 class="mb-0">Banners</h3>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+          <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Banners</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+    <% if (viewData && viewData.error) { %>
+      <div class="alert alert-danger" role="alert"><%= viewData.error %></div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Banners list</h3>
+        <div class="card-tools">
+          <a href="/admin/banners/new" class="btn btn-primary btn-sm">New banner</a>
+        </div>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped mb-0">
+            <thead>
+              <tr>
+                <th style="width: 80px;">ID</th>
+                <th style="width: 200px;">Image</th>
+                <th>Caption</th>
+                <th style="width: 90px;" class="text-center">Order</th>
+                <th style="width: 110px;" class="text-center">Active</th>
+                <th style="width: 110px;">Link</th>
+                <th style="width: 180px;">Created</th>
+                <th style="width: 140px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!banners.length) { %>
+                <tr>
+                  <td colspan="8" class="text-center text-muted py-4">No banners found.</td>
+                </tr>
+              <% } %>
+
+              <% banners.forEach((b) => { %>
+                <tr>
+                  <td><%= b.id %></td>
+                  <td>
+                    <% if (b.imagePath) { %>
+                      <a href="<%= b.imagePath %>" target="_blank" rel="noopener noreferrer" title="Open full image">
+                        <img
+                          src="<%= b.imagePath %>"
+                          alt="Banner"
+                          class="img-thumbnail"
+                          style="width: 180px; height: 60px; object-fit: cover;"
+                        />
+                      </a>
+                    <% } else { %>
+                      <span class="text-muted">—</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <div class="fw-semibold"><%= b.caption || '' %></div>
+                    <% if (b.button || b.content) { %>
+                      <div class="text-muted small">
+                        <% if (b.button) { %>Has Button<% } %>
+                        <% if (b.button && b.content) { %> | <% } %>
+                        <% if (b.content) { %>Content<% } %>
+                      </div>
+                    <% } %>
+                  </td>
+                  <td class="text-center"><%= (typeof b.order === 'number') ? b.order : 0 %></td>
+                  <td class="text-center">
+                    <% if (b.isActive) { %>
+                      <span class="badge text-bg-success">Yes</span>
+                    <% } else { %>
+                      <span class="badge text-bg-secondary">No</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (b.link) { %>
+                      <a href="<%= b.link %>" target="_blank" rel="noopener noreferrer"><%= b.link %></a>
+                    <% } else { %>
+                      <span class="text-muted">—</span>
+                    <% } %>
+                  </td>
+                  <td><%= b.createdAt ? new Date(b.createdAt).toLocaleString('pl-PL') : '' %></td>
+                  <td>
+                    <div class="btn-group" role="group" aria-label="Banner actions">
+                      <a href="/admin/banners/<%= b.id %>/edit" class="btn btn-outline-primary btn-sm">Edit</a>
+                      <form method="post" action="/admin/banners/<%= b.id %>/delete" style="display: inline;" onsubmit="return confirm('Delete this banner?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
