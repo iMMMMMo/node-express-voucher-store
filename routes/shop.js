@@ -3,6 +3,7 @@ const router = express.Router();
 const ProductModel = require('../models/productModel');
 const PageModel = require('../models/pageModel');
 const attachUser = require('../middleware/attachUser');
+const attachStoreNavigation = require('../middleware/attachStoreNavigation');
 const authRequired = require('../middleware/authRequired');
 const prisma = require('../prisma/prismaClient');
 const { Prisma } = require('@prisma/client');
@@ -87,6 +88,7 @@ const repairCartPrices = async (cart) => {
 };
 
 router.use(attachUser);
+router.use(attachStoreNavigation);
 
 const normalizeText = (value) => (value ?? '').toString().trim();
 

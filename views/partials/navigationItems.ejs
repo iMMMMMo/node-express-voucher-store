@@ -1,0 +1,29 @@
+<%
+  const items = (typeof locals.items !== 'undefined' && locals.items) ? locals.items : [];
+  const currentPath = (typeof locals.currentPath !== 'undefined' && locals.currentPath) ? locals.currentPath : '';
+
+  const isExternal = (url) => /^https?:\/\//i.test((url ?? '').toString());
+  const normalizePath = (url) => (url ?? '').toString().trim();
+  const isActiveLink = (url) => {
+    const u = normalizePath(url);
+    if (!u || isExternal(u)) return false;
+    return currentPath === u;
+  };
+%>
+
+<% items.forEach((item) => { %>
+  <% const hasChildren = item && Array.isArray(item.children) && item.children.length > 0; %>
+  <% const href = (item && item.url) ? item.url : '#'; %>
+  <% const classes = []; %>
+  <% if (hasChildren) classes.push('has-children'); %>
+  <% if (isActiveLink(href)) classes.push('active'); %>
+
+  <li class="<%= classes.join(' ') %>">
+    <a href="<%= href %>"><%= item.title %></a>
+    <% if (hasChildren) { %>
+      <ul class="dropdown">
+        <%- include('navigationItems', { items: item.children, currentPath }) %>
+      </ul>
+    <% } %>
+  </li>
+<% }) %>

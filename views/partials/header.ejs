@@ -58,15 +58,16 @@
     <nav class="site-navigation text-right text-md-center" role="navigation">
         <div class="container">
             <ul class="site-menu js-clone-nav d-none d-md-block">
-                <li class="has-children <%= activePage === 'home' ? 'active' : '' %>">
-                    <a href="/">Home</a>
-                    <ul class="dropdown">
-                        <li><a href="#">First Menu</a></li>
-                    </ul>
-                </li>
-                <li><a href="/about">About Us</a></li>
-                <li class="<%= activePage === 'shop' ? 'active' : '' %>"><a href="/shop">Shop</a></li>
-                <li class="<%= activePage === 'contact' ? 'active' : '' %>"><a href="/contact">Contact</a></li>
+                <% const tree = (typeof navigationTree !== 'undefined' && Array.isArray(navigationTree)) ? navigationTree : []; %>
+
+                <% if (tree.length) { %>
+                  <%- include('navigationItems', { items: tree, currentPath }) %>
+                <% } else { %>
+                  <li class="<%= activePage === 'home' ? 'active' : '' %>"><a href="/">Home</a></li>
+                  <li><a href="/about">About Us</a></li>
+                  <li class="<%= activePage === 'shop' ? 'active' : '' %>"><a href="/shop">Shop</a></li>
+                  <li class="<%= activePage === 'contact' ? 'active' : '' %>"><a href="/contact">Contact</a></li>
+                <% } %>
             </ul>
         </div>
     </nav>

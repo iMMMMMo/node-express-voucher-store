@@ -3,9 +3,11 @@ const router = express.Router();
 
 const prisma = require('../prisma/prismaClient');
 const attachUser = require('../middleware/attachUser');
+const attachStoreNavigation = require('../middleware/attachStoreNavigation');
 const authRequired = require('../middleware/authRequired');
 
 router.use(attachUser);
+router.use(attachStoreNavigation);
 
 const decimalToNumber = (d) => {
   if (d === null || typeof d === 'undefined') return 0;
