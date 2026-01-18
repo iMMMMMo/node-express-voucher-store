@@ -3,22 +3,54 @@
   <div class="site-wrap">
     <%- include('partials/header', { activePage: 'home' }) %>
 
-    <div class="site-blocks-cover" style="background-image: url(/images/baner.jpg);"
-      data-aos="fade">
-      <div class="container">
-        <div class="row align-items-start align-items-md-center justify-content-end">
-          <div class="col-md-5 text-center text-md-left pt-5 pt-md-0">
-            <h1 class="mb-2">Digital Gift Vouchers, Instantly</h1>
-            <div class="intro-text text-center text-md-left">
-              <p class="mb-4">Choose a voucher, pay securely, and receive the code in seconds. Perfect for birthdays, holidays, or a last‑minute gift.</p>
-              <p>
-                <a href="/shop" class="btn btn-sm btn-primary">Browse Vouchers</a>
-              </p>
+    <% const homeBanners = (typeof banners !== 'undefined' && Array.isArray(banners)) ? banners : []; %>
+
+    <% if (homeBanners.length) { %>
+      <div class="hero-slide owl-carousel">
+        <% homeBanners.forEach((b) => { %>
+          <div
+            class="site-blocks-cover"
+            style="background-image: url('/images/baner.jpg');"
+            data-bg="<%= b.imagePath || '/images/baner.jpg' %>"
+            data-aos="fade"
+          >
+            <div class="container">
+              <div class="row align-items-start align-items-md-center justify-content-end">
+                <div class="col-md-5 text-center text-md-left pt-5 pt-md-0">
+                  <h1 class="mb-2"><%= b.caption || 'Digital Gift Vouchers, Instantly' %></h1>
+                  <div class="intro-text text-center text-md-left">
+                    <p class="mb-4"><%= b.content || 'Choose a voucher, pay securely, and receive the code in seconds.' %></p>
+                    <p>
+                      <% if (b.button && b.link) { %>
+                        <a href="<%= b.link %>" class="btn btn-sm btn-primary"><%= b.button %></a>
+                      <% } else { %>
+                        <a href="/shop" class="btn btn-sm btn-primary">Browse Vouchers</a>
+                      <% } %>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="site-blocks-cover" style="background-image: url('/images/baner.jpg');" data-aos="fade">
+        <div class="container">
+          <div class="row align-items-start align-items-md-center justify-content-end">
+            <div class="col-md-5 text-center text-md-left pt-5 pt-md-0">
+              <h1 class="mb-2">Digital Gift Vouchers, Instantly</h1>
+              <div class="intro-text text-center text-md-left">
+                <p class="mb-4">Choose a voucher, pay securely, and receive the code in seconds. Perfect for birthdays, holidays, or a last‑minute gift.</p>
+                <p>
+                  <a href="/shop" class="btn btn-sm btn-primary">Browse Vouchers</a>
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    <% } %>
 
     <div class="site-section site-section-sm site-blocks-1">
       <div class="container">

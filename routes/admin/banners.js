@@ -46,7 +46,7 @@ const normalizeUploadedImage = async (absolutePath) => {
 
   if (![".jpg", ".jpeg", ".png", ".webp"].includes(ext)) return;
 
-  let pipeline = sharp(absolutePath).rotate().resize(1200, 400, { fit: "cover" });
+  let pipeline = sharp(absolutePath).rotate().resize(2560, 1200, { fit: "cover" });
 
   if (ext === ".png") pipeline = pipeline.png({ compressionLevel: 9 });
   else if (ext === ".webp") pipeline = pipeline.webp({ quality: 82 });

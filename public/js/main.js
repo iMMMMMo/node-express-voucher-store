@@ -8,6 +8,32 @@ jQuery(document).ready(function($) {
 
 	"use strict";
 
+	var applyDataBackgrounds = function() {
+		$('[data-bg]').each(function() {
+			var bg = $(this).attr('data-bg');
+			if (!bg) return;
+			$(this).css('background-image', 'url("' + bg + '")');
+		});
+	};
+	applyDataBackgrounds();
+
+	var heroSlider = function() {
+		if (!$('.hero-slide').length) return;
+		$('.hero-slide').owlCarousel({
+			center: false,
+			items: 1,
+			loop: true,
+			autoplay: true,
+			autoplayTimeout: 5000,
+			autoplayHoverPause: true,
+			margin: 0,
+			nav: true,
+			navText: ['<span class="icon-arrow_back"></span>', '<span class="icon-arrow_forward"></span>'],
+			dots: true,
+		});
+	};
+	heroSlider();
+
 	var slider = function() {
 		$('.nonloop-block-3').owlCarousel({
 	    center: false,
@@ -16,7 +42,7 @@ jQuery(document).ready(function($) {
 			stagePadding: 15,
 	    margin: 20,
 	    nav: true,
-			navText: ['<span class="icon-arrow_back">', '<span class="icon-arrow_forward">'],
+			navText: ['<span class="icon-arrow_back"></span>', '<span class="icon-arrow_forward"></span>'],
 	    responsive:{
         600:{
         	margin: 20,

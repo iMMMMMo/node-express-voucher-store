@@ -107,6 +107,8 @@
             <label class="form-label" for="image">Image</label>
             <input class="form-control" type="file" id="image" name="image" accept="image/*" />
 
+            <div class="form-text">Recommended upload: at least 1920x1080 (Full HD). The server will auto-crop/resize.</div>
+
             <div class="form-text">Or select an already uploaded image:</div>
 
             <div class="mt-2">
@@ -128,7 +130,7 @@
                       <div class="image-tile border rounded p-2" data-image-tile>
                         <div
                           class="image-tile-placeholder border rounded w-100 d-flex align-items-center justify-content-center text-muted"
-                          style="aspect-ratio: 3 / 1;"
+                          style="aspect-ratio: 35 / 16;"
                         >
                           No image
                         </div>
@@ -153,7 +155,7 @@
                             src="<%= img.webPath %>"
                             alt="Selected image"
                             class="img-thumbnail w-100"
-                            style="object-fit: cover; aspect-ratio: 3 / 1;"
+                            style="object-fit: cover; aspect-ratio: 35 / 16;"
                           />
                         </div>
                       </label>
