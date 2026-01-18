@@ -26,7 +26,10 @@
 
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">Navigations lists</h3>
+        <h3 class="card-title">Navigations list</h3>
+        <div class="card-tools">
+          <a href="/admin/navigations/new" class="btn btn-primary btn-sm">New navigation</a>
+        </div>
       </div>
 
       <div class="card-body p-0">
@@ -41,19 +44,25 @@
                 <th style="width: 90px;" class="text-center">Order</th>
                 <th style="width: 110px;" class="text-center">Active</th>
                 <th style="width: 180px;">Created</th>
+                <th style="width: 140px;">Actions</th>
               </tr>
             </thead>
             <tbody>
               <% if (!navigations.length) { %>
                 <tr>
-                  <td colspan="7" class="text-center text-muted py-4">No navigation items found.</td>
+                  <td colspan="8" class="text-center text-muted py-4">No navigation items found.</td>
                 </tr>
               <% } %>
 
               <% navigations.forEach((n) => { %>
                 <tr>
                   <td><%= n.id %></td>
-                  <td><%= n.title %></td>
+                  <td>
+                    <% if (n.depth && n.depth > 0) { %>
+                      <span class="text-muted"><%= '— '.repeat(n.depth) %></span>
+                    <% } %>
+                    <%= n.title %>
+                  </td>
                   <td>
                     <% if (n.url) { %>
                       <a href="<%= n.url %>" target="_blank" rel="noopener noreferrer"><%= n.url %></a>
@@ -77,6 +86,14 @@
                     <% } %>
                   </td>
                   <td><%= n.createdAt ? new Date(n.createdAt).toLocaleString('pl-PL') : '' %></td>
+                  <td>
+                    <div class="btn-group" role="group" aria-label="Navigation actions">
+                      <a href="/admin/navigations/<%= n.id %>/edit" class="btn btn-outline-primary btn-sm">Edit</a>
+                      <form method="post" action="/admin/navigations/<%= n.id %>/delete" style="display: inline;" onsubmit="return confirm('Delete this navigation item?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                      </form>
+                    </div>
+                  </td>
                 </tr>
               <% }) %>
             </tbody>
