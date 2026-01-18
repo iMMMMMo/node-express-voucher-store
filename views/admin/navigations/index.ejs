@@ -1,0 +1,88 @@
+<%
+  const navigations = (viewData && viewData.navigations) ? viewData.navigations : [];
+%>
+
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <h3 class="mb-0">Navigations</h3>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+          <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Navigations</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+    <% if (viewData && viewData.error) { %>
+      <div class="alert alert-danger" role="alert"><%= viewData.error %></div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Navigations lists</h3>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped mb-0">
+            <thead>
+              <tr>
+                <th style="width: 80px;">ID</th>
+                <th>Title</th>
+                <th>URL</th>
+                <th>Parent</th>
+                <th style="width: 90px;" class="text-center">Order</th>
+                <th style="width: 110px;" class="text-center">Active</th>
+                <th style="width: 180px;">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!navigations.length) { %>
+                <tr>
+                  <td colspan="7" class="text-center text-muted py-4">No navigation items found.</td>
+                </tr>
+              <% } %>
+
+              <% navigations.forEach((n) => { %>
+                <tr>
+                  <td><%= n.id %></td>
+                  <td><%= n.title %></td>
+                  <td>
+                    <% if (n.url) { %>
+                      <a href="<%= n.url %>" target="_blank" rel="noopener noreferrer"><%= n.url %></a>
+                    <% } else { %>
+                      <span class="text-muted">—</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (n.parent && n.parent.title) { %>
+                      <span title="ID: <%= n.parent.id %>"><%= n.parent.title %></span>
+                    <% } else { %>
+                      <span class="text-muted">—</span>
+                    <% } %>
+                  </td>
+                  <td class="text-center"><%= (typeof n.order === 'number') ? n.order : 0 %></td>
+                  <td class="text-center">
+                    <% if (n.isActive) { %>
+                      <span class="badge text-bg-success">Yes</span>
+                    <% } else { %>
+                      <span class="badge text-bg-secondary">No</span>
+                    <% } %>
+                  </td>
+                  <td><%= n.createdAt ? new Date(n.createdAt).toLocaleString('pl-PL') : '' %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
