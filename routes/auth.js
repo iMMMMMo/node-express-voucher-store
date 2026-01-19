@@ -88,7 +88,12 @@ router.post('/register', [
         req.session.userName = user.name;
         req.session.userRole = user.role;
 
-        res.redirect('/');
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error after registration:', err);
+            }
+            res.redirect('/');
+        });
     } catch (error) {
         console.error('Registration error:', error);
         res.render('register', {
@@ -162,7 +167,13 @@ router.post('/login', [
 
         const returnTo = req.session.returnTo || '/';
         delete req.session.returnTo;
-        res.redirect(returnTo);
+
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error after login:', err);
+            }
+            res.redirect(returnTo);
+        });
     } catch (error) {
         console.error('Login error:', error);
         res.render('login', {
