@@ -42,6 +42,7 @@ const addressesRoutes = require('./routes/addresses');
 const ordersRoutes = require('./routes/orders');
 const productApiRoutes = require('./routes/api/products');
 const cartApiRoutes = require('./routes/api/cart');
+const errorHandler = require('./middleware/errorHandler');
 
 app.use("/admin", adminRoutes);
 app.use('/', shopRoutes);
@@ -51,6 +52,7 @@ app.use('/', addressesRoutes);
 app.use('/', ordersRoutes);
 app.use('/api/products', productApiRoutes);
 app.use('/api/cart', cartApiRoutes);
+app.use(errorHandler);
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);

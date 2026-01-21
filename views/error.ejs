@@ -1,0 +1,20 @@
+<%- include('partials/head', { title: title || 'Error | Voucher Shop' }) %>
+<%- include('partials/header') %>
+
+<div class="site-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 text-center">
+        <h2 class="display-4"><%= title || 'Error' %></h2>
+        <p class="lead"><%= message || 'Unexpected error.' %></p>
+        <% if (status) { %>
+          <p class="text-muted">Status: <%= status %></p>
+        <% } %>
+        <p><a href="/" class="btn btn-primary btn-sm">Go home</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
+<%- include('partials/scripts') %>
