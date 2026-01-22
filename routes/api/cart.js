@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const ProductModel = require('../../models/productModel');
 const asyncHandler = require('../../utils/asyncHandler');
+const { parseIntSafe } = require('../../utils/number');
+const { normalizeText } = require('../../utils/text');
 
 const jsonError = (res, status, message) => res.status(status).json({
     ok: false,
@@ -17,21 +19,7 @@ const getCart = (req) => {
 };
 
 const parseQuantity = (value) => {
-    const parsed = Number.parseInt(value, 10);
-    if (!Number.isFinite(parsed) || Number.isNaN(parsed)) {
-        return null;
-    }
-    return parsed;
-};
-
-const normalizeText = (value, { maxLen }) => {
-    if (value === null || typeof value === 'undefined') return null;
-    const text = value.toString().trim();
-    if (!text.length) return null;
-    if (typeof maxLen === 'number' && maxLen > 0) {
-        return text.slice(0, maxLen);
-    }
-    return text;
+    return parseIntSafe(value);
 };
 
 const normalizeRecipientEntry = (entry) => {

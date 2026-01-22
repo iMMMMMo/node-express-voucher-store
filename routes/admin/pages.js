@@ -6,6 +6,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const sharp = require("sharp");
+const { parseIntSafe } = require("../../utils/number");
+const { normalizeText } = require("../../utils/text");
 
 const uploadDir = path.join(__dirname, "..", "..", "public", "images", "pages");
 fs.mkdirSync(uploadDir, { recursive: true });
@@ -77,16 +79,6 @@ const upload = multer({
     return cb(null, true);
   },
 });
-
-const parseId = (value) => {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
-const normalizeEmpty = (value) => {
-  const trimmed = (value ?? "").toString().trim();
-  return trimmed.length ? trimmed : null;
-};
 
 const handleUniqueUrlError = (error) => {
   if (!error || error.code !== "P2002") return null;
@@ -185,7 +177,7 @@ router.post(
         userId: req.session.userId,
         title: (req.body.title || "").trim(),
         url: (req.body.url || "").trim(),
-        content: normalizeEmpty(req.body.content),
+        content: normalizeText(req.body.content),
         imagePath,
       });
 
@@ -221,7 +213,7 @@ router.get(
       return res.redirect("/admin/pages");
     }
 
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
     try {
       const page = await PageModel.findByIdForUser(id, req.session.userId);
       if (!page) {
@@ -266,7 +258,7 @@ router.post(
     body("content").optional({ nullable: true }).trim(),
   ],
   async (req, res) => {
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
 
     let existingPage = null;
     try {
@@ -319,7 +311,7 @@ router.post(
         userId: req.session.userId,
         title: (req.body.title || "").trim(),
         url: (req.body.url || "").trim(),
-        content: normalizeEmpty(req.body.content),
+        content: normalizeText(req.body.content),
         imagePath,
       });
 
@@ -351,7 +343,7 @@ router.post(
   "/:id/delete",
   [param("id").isInt({ min: 1 }).withMessage("Invalid page id.")],
   async (req, res) => {
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
     if (!id) {
       return res.redirect("/admin/pages");
     }
@@ -406,7 +398,7 @@ router.use((err, req, res, next) => {
     });
   }
 
-  const id = parseId(req.params.id);
+  const id = parseIntSafe(req.params.id);
   if (!id) {
     return res.redirect("/admin/pages");
   }

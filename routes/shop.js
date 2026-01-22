@@ -9,14 +9,8 @@ const prisma = require('../prisma/prismaClient');
 const { Prisma } = require('@prisma/client');
 const sanitizeHtml = require('sanitize-html');
 const asyncHandler = require('../utils/asyncHandler');
-
-const toNumber = (value) => {
-    if (value === null || typeof value === 'undefined') return null;
-    if (typeof value === 'number') return value;
-    const asString = typeof value === 'string' ? value : value.toString();
-    const parsed = Number.parseFloat(asString);
-    return Number.isFinite(parsed) ? parsed : null;
-};
+const { toNumber, decimalToNumber } = require('../utils/number');
+const { normalizeText } = require('../utils/text');
 
 const normalizeSelectedAttributeValueIds = (value) => {
     const arr = Array.isArray(value) ? value : (value ? [value] : []);
@@ -91,11 +85,9 @@ const repairCartPrices = async (cart) => {
 router.use(attachUser);
 router.use(attachStoreNavigation);
 
-const normalizeText = (value) => (value ?? '').toString().trim();
-
 const validatePostalCode = (postalCode, countryRaw) => {
-    const country = normalizeText(countryRaw);
-    const pc = normalizeText(postalCode);
+    const country = normalizeText(countryRaw) ?? '';
+    const pc = normalizeText(postalCode) ?? '';
     const isPL = /^(pl|poland|polska)$/i.test(country);
     if (isPL) return /^\d{2}-\d{3}$/.test(pc);
     return /^[A-Za-z0-9\s-]{2,15}$/.test(pc);
@@ -297,11 +289,11 @@ router.post('/checkout', authRequired, asyncHandler(async (req, res) => {
         errors.push({ msg: 'Please select a valid payment method for the chosen delivery method.' });
     }
 
-    const deliveryAddressChoice = normalizeText(req.body.deliveryAddressChoice);
-    const shippingStreet = normalizeText(req.body.shippingStreet);
-    const shippingCity = normalizeText(req.body.shippingCity);
-    const shippingPostalCode = normalizeText(req.body.shippingPostalCode);
-    const shippingCountry = normalizeText(req.body.shippingCountry);
+    const deliveryAddressChoice = normalizeText(req.body.deliveryAddressChoice) ?? '';
+    const shippingStreet = normalizeText(req.body.shippingStreet) ?? '';
+    const shippingCity = normalizeText(req.body.shippingCity) ?? '';
+    const shippingPostalCode = normalizeText(req.body.shippingPostalCode) ?? '';
+    const shippingCountry = normalizeText(req.body.shippingCountry) ?? '';
 
     const deliveryPriceNumber = deliveryMethod === 'COURIER' ? 15.0 : 0.0;
     const paymentPriceNumber = 0.0;
@@ -570,20 +562,6 @@ router.get('/thankyou', authRequired, async (req, res) => {
     }
 
     const orderId = req.session.lastOrderId;
-
-    const decimalToNumber = (d) => {
-        if (d === null || typeof d === 'undefined') return 0;
-        if (typeof d === 'number') return d;
-        if (typeof d === 'string') {
-            const n = Number.parseFloat(d);
-            return Number.isFinite(n) ? n : 0;
-        }
-        if (typeof d.toString === 'function') {
-            const n = Number.parseFloat(d.toString());
-            return Number.isFinite(n) ? n : 0;
-        }
-        return 0;
-    };
 
     try {
         const order = await prisma.order.findFirst({

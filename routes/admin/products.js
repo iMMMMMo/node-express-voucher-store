@@ -8,6 +8,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const sharp = require("sharp");
+const { parseIntSafe } = require("../../utils/number");
+const { normalizeText } = require("../../utils/text");
 
 const uploadDir = path.join(__dirname, "..", "..", "public", "images", "products");
 fs.mkdirSync(uploadDir, { recursive: true });
@@ -104,9 +106,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-const parseId = (value) => {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : null;
+const handleUniqueSlugError = (error) => {
+  if (!error || error.code !== "P2002") return null;
+  const target = Array.isArray(error.meta?.target) ? error.meta.target : [];
+  if (target.includes("slug")) return "Slug must be unique.";
+  return "Unique constraint violation.";
 };
 
 const parseMoney = (value) => {
@@ -115,19 +119,6 @@ const parseMoney = (value) => {
   const parsed = Number.parseFloat(asString);
   if (!Number.isFinite(parsed)) return 0;
   return parsed;
-};
-
-const normalizeText = (value, maxLen) => {
-  const text = (value ?? "").toString().trim();
-  if (!text) return null;
-  return text.slice(0, maxLen);
-};
-
-const handleUniqueSlugError = (error) => {
-  if (!error || error.code !== "P2002") return null;
-  const target = Array.isArray(error.meta?.target) ? error.meta.target : [];
-  if (target.includes("slug")) return "Slug must be unique.";
-  return "Unique constraint violation.";
 };
 
 router.get("/new", (req, res) => {
@@ -214,9 +205,9 @@ router.post(
 
       await prisma.product.create({
         data: {
-          name: normalizeText(req.body.name, 160),
-          slug: normalizeText(req.body.slug, 160),
-          description: normalizeText(req.body.description, 5000),
+          name: normalizeText(req.body.name, { maxLen: 160 }),
+          slug: normalizeText(req.body.slug, { maxLen: 160 }),
+          description: normalizeText(req.body.description, { maxLen: 5000 }),
           basePrice: new Prisma.Decimal(basePrice.toFixed(2)),
           vat: new Prisma.Decimal(vat.toFixed(2)),
           imagePath,
@@ -253,7 +244,7 @@ router.get(
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.redirect("/admin/products");
 
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
     try {
       const product = await prisma.product.findUnique({
         where: { id },
@@ -287,7 +278,7 @@ router.get(
 );
 
 router.get("/:id/attributes", async (req, res) => {
-  const id = parseId(req.params.id);
+  const id = parseIntSafe(req.params.id);
   if (!id) return res.redirect("/admin/products");
 
   try {
@@ -351,7 +342,7 @@ router.post(
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
 
     const formData = {
       name: req.body.name,
@@ -405,9 +396,9 @@ router.post(
       await prisma.product.update({
         where: { id },
         data: {
-          name: normalizeText(req.body.name, 160),
-          slug: normalizeText(req.body.slug, 160),
-          description: normalizeText(req.body.description, 5000),
+          name: normalizeText(req.body.name, { maxLen: 160 }),
+          slug: normalizeText(req.body.slug, { maxLen: 160 }),
+          description: normalizeText(req.body.description, { maxLen: 5000 }),
           basePrice: new Prisma.Decimal(basePrice.toFixed(2)),
           vat: new Prisma.Decimal(vat.toFixed(2)),
           imagePath,
@@ -442,7 +433,7 @@ router.post(
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.redirect("/admin/products");
 
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
     if (!id) return res.redirect("/admin/products");
 
     try {
@@ -476,7 +467,7 @@ router.post(
 );
 
 router.post("/:id/attributes", async (req, res) => {
-  const id = parseId(req.params.id);
+  const id = parseIntSafe(req.params.id);
   if (!id) return res.redirect("/admin/products");
 
   try {
@@ -523,7 +514,7 @@ router.post("/:id/attributes", async (req, res) => {
       const valueRaw = req.body[`row_${rowId}_value`];
       const deltaRaw = req.body[`row_${rowId}_priceDelta`];
 
-      const attributeId = parseId(attributeIdRaw);
+      const attributeId = parseIntSafe(attributeIdRaw);
       const value = (valueRaw ?? "").toString().trim();
       const delta = parseMoney(deltaRaw);
 
@@ -561,7 +552,7 @@ router.post("/:id/attributes", async (req, res) => {
       const valueRaw = newValues[i];
       const deltaRaw = newDeltas[i];
 
-      const attributeId = parseId(attributeIdRaw);
+      const attributeId = parseIntSafe(attributeIdRaw);
       const value = (valueRaw ?? "").toString().trim();
       const delta = parseMoney(deltaRaw);
 

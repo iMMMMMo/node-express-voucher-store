@@ -6,23 +6,10 @@ const attachUser = require('../middleware/attachUser');
 const attachStoreNavigation = require('../middleware/attachStoreNavigation');
 const authRequired = require('../middleware/authRequired');
 const asyncHandler = require('../utils/asyncHandler');
+const { decimalToNumber } = require('../utils/number');
 
 router.use(attachUser);
 router.use(attachStoreNavigation);
-
-const decimalToNumber = (d) => {
-  if (d === null || typeof d === 'undefined') return 0;
-  if (typeof d === 'number') return d;
-  if (typeof d === 'string') {
-    const n = Number.parseFloat(d);
-    return Number.isFinite(n) ? n : 0;
-  }
-  if (typeof d.toString === 'function') {
-    const n = Number.parseFloat(d.toString());
-    return Number.isFinite(n) ? n : 0;
-  }
-  return 0;
-};
 
 router.get('/orders', authRequired, asyncHandler(async (req, res) => {
   const orders = await prisma.order.findMany({

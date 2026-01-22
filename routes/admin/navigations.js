@@ -2,27 +2,19 @@ const express = require("express");
 const router = express.Router();
 const NavigationModel = require("../../models/navigationModel");
 const { body, param, validationResult } = require("express-validator");
+const { parseIntSafe } = require("../../utils/number");
+const { normalizeText: normalizeTextBase } = require("../../utils/text");
 
-const parseId = (value) => {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
-const normalizeText = (value, maxLen) => {
-  const text = (value ?? "").toString().trim();
-  if (!text.length) return "";
-  return typeof maxLen === "number" ? text.slice(0, maxLen) : text;
-};
+const normalizeText = (value, maxLen) => normalizeTextBase(value, { maxLen }) ?? "";
 
 const parseOrder = (value) => {
-  const parsed = Number.parseInt((value ?? "").toString().trim(), 10);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return parseIntSafe((value ?? "").toString().trim()) ?? 0;
 };
 
 const parseOptionalId = (value) => {
   const raw = (value ?? "").toString().trim();
   if (!raw) return null;
-  return parseId(raw);
+  return parseIntSafe(raw);
 };
 
 const isChecked = (value) => {
@@ -176,7 +168,7 @@ router.post(
     body("parentId").optional({ nullable: true }).custom((value) => {
       const raw = (value ?? "").toString().trim();
       if (!raw) return true;
-      const parsed = parseId(raw);
+      const parsed = parseIntSafe(raw);
       if (!parsed) throw new Error("Invalid parent.");
       return true;
     }),
@@ -250,7 +242,7 @@ router.get(
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.redirect("/admin/navigations");
 
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
     const userId = req.session.userId;
 
     try {
@@ -307,14 +299,14 @@ router.post(
     body("parentId").optional({ nullable: true }).custom((value) => {
       const raw = (value ?? "").toString().trim();
       if (!raw) return true;
-      const parsed = parseId(raw);
+      const parsed = parseIntSafe(raw);
       if (!parsed) throw new Error("Invalid parent.");
       return true;
     }),
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
     const userId = req.session.userId;
 
     const formData = {
@@ -401,7 +393,7 @@ router.post(
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.redirect("/admin/navigations");
 
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
     const userId = req.session.userId;
     if (!id || !userId) return res.redirect("/admin/navigations");
 

@@ -2,16 +2,8 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../../prisma/prismaClient");
 const { body, param, validationResult } = require("express-validator");
-
-const parseId = (value) => {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
-const normalizeName = (value) => {
-  const name = (value ?? "").toString().trim();
-  return name.length ? name : null;
-};
+const { parseIntSafe } = require("../../utils/number");
+const { normalizeText } = require("../../utils/text");
 
 router.get("/", async (req, res) => {
   try {
@@ -77,7 +69,7 @@ router.post(
     try {
       await prisma.productAttribute.create({
         data: {
-          name: normalizeName(req.body.name),
+          name: normalizeText(req.body.name),
         },
       });
 
@@ -107,7 +99,7 @@ router.get(
       return res.redirect("/admin/attributes");
     }
 
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
     try {
       const attribute = await prisma.productAttribute.findUnique({
         where: { id },
@@ -142,7 +134,7 @@ router.post(
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
     const formData = { name: req.body.name };
 
     if (!id || !errors.isEmpty()) {
@@ -164,7 +156,7 @@ router.post(
     try {
       await prisma.productAttribute.update({
         where: { id },
-        data: { name: normalizeName(req.body.name) },
+        data: { name: normalizeText(req.body.name) },
       });
 
       return res.redirect("/admin/attributes");
@@ -194,7 +186,7 @@ router.post(
       return res.redirect("/admin/attributes");
     }
 
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
     if (!id) return res.redirect("/admin/attributes");
 
     try {

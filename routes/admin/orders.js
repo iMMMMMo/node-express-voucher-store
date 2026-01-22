@@ -2,20 +2,7 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../../prisma/prismaClient");
 const { param, validationResult } = require("express-validator");
-
-const decimalToNumber = (d) => {
-  if (d === null || typeof d === "undefined") return 0;
-  if (typeof d === "number") return d;
-  if (typeof d === "string") {
-    const n = Number.parseFloat(d);
-    return Number.isFinite(n) ? n : 0;
-  }
-  if (typeof d.toString === "function") {
-    const n = Number.parseFloat(d.toString());
-    return Number.isFinite(n) ? n : 0;
-  }
-  return 0;
-};
+const { decimalToNumber } = require("../../utils/number");
 
 router.get("/", async (req, res) => {
   try {

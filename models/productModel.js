@@ -1,12 +1,5 @@
 const prisma = require("../prisma/prismaClient");
-
-const toNumber = (value) => {
-    if (value === null || typeof value === 'undefined') return null;
-    if (typeof value === 'number') return value;
-    const asString = typeof value === 'string' ? value : value.toString();
-    const parsed = Number.parseFloat(asString);
-    return Number.isFinite(parsed) ? parsed : null;
-};
+const { toNumber } = require("../utils/number");
 
 const normalizeSelectedAttributeValueIds = (value) => {
     const arr = Array.isArray(value) ? value : (value ? [value] : []);

@@ -6,6 +6,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const sharp = require("sharp");
+const { parseIntSafe } = require("../../utils/number");
+const { normalizeText } = require("../../utils/text");
 
 const uploadDir = path.join(__dirname, "..", "..", "public", "images", "banners");
 fs.mkdirSync(uploadDir, { recursive: true });
@@ -78,20 +80,8 @@ const upload = multer({
   },
 });
 
-const parseId = (value) => {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
-const normalizeEmpty = (value, maxLen = 5000) => {
-  const trimmed = (value ?? "").toString().trim();
-  if (!trimmed.length) return null;
-  return trimmed.slice(0, maxLen);
-};
-
 const parseOrder = (value) => {
-  const parsed = Number.parseInt((value ?? "").toString().trim(), 10);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return parseIntSafe((value ?? "").toString().trim()) ?? 0;
 };
 
 router.get("/", async (req, res) => {
@@ -190,10 +180,10 @@ router.post(
       await BannerModel.create({
         userId: req.session.userId,
         imagePath,
-        caption: normalizeEmpty(req.body.caption, 200),
-        content: normalizeEmpty(req.body.content, 5000),
-        button: normalizeEmpty(req.body.button, 80),
-        link: normalizeEmpty(req.body.link, 300),
+        caption: normalizeText(req.body.caption, { maxLen: 200 }),
+        content: normalizeText(req.body.content, { maxLen: 5000 }),
+        button: normalizeText(req.body.button, { maxLen: 80 }),
+        link: normalizeText(req.body.link, { maxLen: 300 }),
         order: parseOrder(req.body.order),
         isActive: formData.isActive,
       });
@@ -226,7 +216,7 @@ router.get(
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.redirect("/admin/banners");
 
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
     try {
       const banner = await BannerModel.findByIdForUser(id, req.session.userId);
       if (!banner) return res.redirect("/admin/banners");
@@ -269,7 +259,7 @@ router.post(
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
 
     const banner = await BannerModel.findByIdForUser(id, req.session.userId);
     if (!banner) {
@@ -318,10 +308,10 @@ router.post(
       await BannerModel.update(id, {
         userId: req.session.userId,
         imagePath,
-        caption: normalizeEmpty(req.body.caption, 200),
-        content: normalizeEmpty(req.body.content, 5000),
-        button: normalizeEmpty(req.body.button, 80),
-        link: normalizeEmpty(req.body.link, 300),
+        caption: normalizeText(req.body.caption, { maxLen: 200 }),
+        content: normalizeText(req.body.content, { maxLen: 5000 }),
+        button: normalizeText(req.body.button, { maxLen: 80 }),
+        link: normalizeText(req.body.link, { maxLen: 300 }),
         order: parseOrder(req.body.order),
         isActive: formData.isActive,
       });
@@ -352,7 +342,7 @@ router.post(
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.redirect("/admin/banners");
 
-    const id = parseId(req.params.id);
+    const id = parseIntSafe(req.params.id);
 
     try {
       const banner = await BannerModel.findByIdForUser(id, req.session.userId);
