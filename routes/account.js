@@ -6,6 +6,7 @@ const UserModel = require('../models/userModel');
 const attachUser = require('../middleware/attachUser');
 const attachStoreNavigation = require('../middleware/attachStoreNavigation');
 const authRequired = require('../middleware/authRequired');
+const asyncHandler = require('../utils/asyncHandler');
 
 router.use(attachUser);
 router.use(attachStoreNavigation);
@@ -62,14 +63,14 @@ const renderAccount = async (req, res, { status = 200, errors = null, success = 
     });
 };
 
-router.get('/account', authRequired, async (req, res) => {
+router.get('/account', authRequired, asyncHandler(async (req, res) => {
     const updated = (req.query.updated || '').toString();
     const success = updated === 'profile'
         ? 'Your profile has been updated.'
         : (updated === 'password' ? 'Your password has been changed.' : null);
 
     return renderAccount(req, res, { success });
-});
+}));
 
 router.post('/account', [
     authRequired,
@@ -99,7 +100,7 @@ router.post('/account', [
             if (!prefixDigits) throw new Error('Phone requires a prefix like +48');
             return true;
         })
-], async (req, res) => {
+], asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     const profileData = {
         email: req.body.email,
@@ -159,7 +160,7 @@ router.post('/account', [
             profileData
         });
     }
-});
+}));
 
 router.post('/account/password', [
     authRequired,
@@ -172,7 +173,7 @@ router.post('/account/password', [
     body('confirmPassword')
         .custom((value, { req }) => value === req.body.newPassword)
         .withMessage('New passwords do not match')
-], async (req, res) => {
+], asyncHandler(async (req, res) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
@@ -211,6 +212,6 @@ router.post('/account/password', [
             errors: [{ msg: 'Could not change password. Please try again.' }]
         });
     }
-});
+}));
 
 module.exports = router;

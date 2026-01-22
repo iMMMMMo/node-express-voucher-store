@@ -6,6 +6,7 @@ const attachUser = require('../middleware/attachUser');
 const attachStoreNavigation = require('../middleware/attachStoreNavigation');
 const authRequired = require('../middleware/authRequired');
 const UserAddressModel = require('../models/userAddressModel');
+const asyncHandler = require('../utils/asyncHandler');
 
 router.use(attachUser);
 router.use(attachStoreNavigation);
@@ -54,7 +55,7 @@ const renderAddresses = async (req, res, { status = 200, errors = null, success 
     });
 };
 
-router.get('/addresses', authRequired, async (req, res) => {
+router.get('/addresses', authRequired, asyncHandler(async (req, res) => {
     const success = (req.query.success || '').toString();
     const msg = success === 'created'
         ? 'Address added.'
@@ -65,7 +66,7 @@ router.get('/addresses', authRequired, async (req, res) => {
                 : (success === 'updated' ? 'Address updated.' : null)));
 
     return renderAddresses(req, res, { success: msg });
-});
+}));
 
 router.post('/addresses', [
     authRequired,
@@ -74,7 +75,7 @@ router.post('/addresses', [
     body('country').trim().isLength({ min: 2 }).withMessage('Country is required'),
     validatePostalCode(),
     body('isDefault').optional().toBoolean(),
-], async (req, res) => {
+], asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     const formData = {
         street: req.body.street,
@@ -104,12 +105,12 @@ router.post('/addresses', [
             formData
         });
     }
-});
+}));
 
 router.get('/addresses/:id/edit', [
     authRequired,
     param('id').isInt({ min: 1 }).withMessage('Invalid address id')
-], async (req, res) => {
+], asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return renderAddresses(req, res, {
@@ -141,7 +142,7 @@ router.get('/addresses/:id/edit', [
             isDefault: Boolean(address.isDefault)
         }
     });
-});
+}));
 
 router.post('/addresses/:id/edit', [
     authRequired,
@@ -151,7 +152,7 @@ router.post('/addresses/:id/edit', [
     body('country').trim().isLength({ min: 2 }).withMessage('Country is required'),
     validatePostalCode(),
     body('isDefault').optional().toBoolean(),
-], async (req, res) => {
+], asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     const formData = {
         street: req.body.street,
@@ -211,12 +212,12 @@ router.post('/addresses/:id/edit', [
             formData
         });
     }
-});
+}));
 
 router.post('/addresses/:id/default', [
     authRequired,
     param('id').isInt({ min: 1 }).withMessage('Invalid address id')
-], async (req, res) => {
+], asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return renderAddresses(req, res, {
@@ -243,12 +244,12 @@ router.post('/addresses/:id/default', [
             errors: [{ msg: 'Could not set default address. Please try again.' }]
         });
     }
-});
+}));
 
 router.post('/addresses/:id/delete', [
     authRequired,
     param('id').isInt({ min: 1 }).withMessage('Invalid address id')
-], async (req, res) => {
+], asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return renderAddresses(req, res, {
@@ -277,6 +278,6 @@ router.post('/addresses/:id/delete', [
             errors: [{ msg: 'Could not delete address. Please try again.' }]
         });
     }
-});
+}));
 
 module.exports = router;

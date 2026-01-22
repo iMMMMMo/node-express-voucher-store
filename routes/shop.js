@@ -8,6 +8,7 @@ const authRequired = require('../middleware/authRequired');
 const prisma = require('../prisma/prismaClient');
 const { Prisma } = require('@prisma/client');
 const sanitizeHtml = require('sanitize-html');
+const asyncHandler = require('../utils/asyncHandler');
 
 const toNumber = (value) => {
     if (value === null || typeof value === 'undefined') return null;
@@ -195,7 +196,7 @@ router.get('/shop-single/:slug', async (req, res) => {
     }
 });
 
-router.get('/cart', async (req, res) => {
+router.get('/cart', asyncHandler(async (req, res) => {
     const cart = req.session.cart || [];
     const reason = (req.query.reason || '').toString();
     const notice = reason === 'empty'
@@ -223,58 +224,56 @@ router.get('/cart', async (req, res) => {
         total,
         notice
     });
-});
+}));
 
-router.get('/checkout', authRequired, (req, res) => {
+router.get('/checkout', authRequired, asyncHandler(async (req, res) => {
     const cart = req.session.cart || [];
     if (!cart.length) {
         return res.redirect('/cart?reason=empty');
     }
 
-    (async () => {
-        try {
-            await repairCartPrices(cart);
-            req.session.cart = cart;
-        } catch (error) {
-            console.error('Error repairing checkout cart prices:', error);
-        }
+    try {
+        await repairCartPrices(cart);
+        req.session.cart = cart;
+    } catch (error) {
+        console.error('Error repairing checkout cart prices:', error);
+    }
 
-        let deliveryAddresses = [];
-        try {
-            deliveryAddresses = await prisma.userAddress.findMany({
-                where: { userId: req.session.userId, type: 'delivery' },
-                orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }]
-            });
-        } catch (error) {
-            console.error('Error fetching delivery addresses for checkout:', error);
-        }
-
-        const defaultAddress = deliveryAddresses.find((a) => a && a.isDefault) || null;
-        const defaultChoice = defaultAddress ? String(defaultAddress.id) : 'new';
-
-        const total = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.quantity) || 0)), 0);
-
-        res.render('checkout', {
-            title: 'Checkout | Voucher Shop',
-            activePage: '',
-            cart,
-            total,
-            errors: null,
-            deliveryAddresses,
-            formData: {
-                paymentMethod: 'BANK_TRANSFER',
-                deliveryMethod: 'E_DELIVERY',
-                deliveryAddressChoice: defaultChoice,
-                shippingStreet: defaultAddress?.street || '',
-                shippingCity: defaultAddress?.city || '',
-                shippingPostalCode: defaultAddress?.postalCode || '',
-                shippingCountry: defaultAddress?.country || 'Poland'
-            }
+    let deliveryAddresses = [];
+    try {
+        deliveryAddresses = await prisma.userAddress.findMany({
+            where: { userId: req.session.userId, type: 'delivery' },
+            orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }]
         });
-    })();
-});
+    } catch (error) {
+        console.error('Error fetching delivery addresses for checkout:', error);
+    }
 
-router.post('/checkout', authRequired, async (req, res) => {
+    const defaultAddress = deliveryAddresses.find((a) => a && a.isDefault) || null;
+    const defaultChoice = defaultAddress ? String(defaultAddress.id) : 'new';
+
+    const total = cart.reduce((sum, item) => sum + ((Number(item.price) || 0) * (Number(item.quantity) || 0)), 0);
+
+    res.render('checkout', {
+        title: 'Checkout | Voucher Shop',
+        activePage: '',
+        cart,
+        total,
+        errors: null,
+        deliveryAddresses,
+        formData: {
+            paymentMethod: 'BANK_TRANSFER',
+            deliveryMethod: 'E_DELIVERY',
+            deliveryAddressChoice: defaultChoice,
+            shippingStreet: defaultAddress?.street || '',
+            shippingCity: defaultAddress?.city || '',
+            shippingPostalCode: defaultAddress?.postalCode || '',
+            shippingCountry: defaultAddress?.country || 'Poland'
+        }
+    });
+}));
+
+router.post('/checkout', authRequired, asyncHandler(async (req, res) => {
     const cart = req.session.cart || [];
     if (!cart.length) {
         return res.redirect('/cart?reason=empty');
@@ -555,7 +554,7 @@ router.post('/checkout', authRequired, async (req, res) => {
             }
         });
     }
-});
+}));
 
 router.get('/thankyou', authRequired, async (req, res) => {
     if (!req.session.lastOrderId) {

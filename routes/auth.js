@@ -4,6 +4,7 @@ const { body, validationResult } = require('express-validator');
 const UserModel = require('../models/userModel');
 const attachUser = require('../middleware/attachUser');
 const attachStoreNavigation = require('../middleware/attachStoreNavigation');
+const asyncHandler = require('../utils/asyncHandler');
 
 router.use(attachUser);
 router.use(attachStoreNavigation);
@@ -50,7 +51,7 @@ router.post('/register', [
             if (!prefixDigits) throw new Error('Phone requires a prefix like +48');
             return true;
         })
-], async (req, res) => {
+], asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     
     if (!errors.isEmpty()) {
@@ -103,7 +104,7 @@ router.post('/register', [
             formData: req.body
         });
     }
-});
+}));
 
 router.get('/login', (req, res) => {
     if (req.session.userId) {
@@ -125,7 +126,7 @@ router.post('/login', [
     body('password')
         .notEmpty()
         .withMessage('Password is required')
-], async (req, res) => {
+], asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     
     if (!errors.isEmpty()) {
@@ -183,7 +184,7 @@ router.post('/login', [
             formData: req.body
         });
     }
-});
+}));
 
 router.post('/logout', (req, res) => {
     req.session.destroy((err) => {

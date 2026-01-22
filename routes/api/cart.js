@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const ProductModel = require('../../models/productModel');
+const asyncHandler = require('../../utils/asyncHandler');
+
+const jsonError = (res, status, message) => res.status(status).json({
+    ok: false,
+    error: { message },
+    message,
+});
 
 const getCart = (req) => {
     if (!req.session.cart) {
@@ -56,59 +63,53 @@ router.get('/count', (req, res) => {
     res.json({ count });
 });
 
-router.post('/add', async (req, res) => {
-    try {
-        const { slug, quantity = 1, selectedAttributeValueIds = [] } = req.body;
-        
-        if (!slug) {
-            return res.status(400).json({ message: 'Product slug is required' });
-        }
+router.post('/add', asyncHandler(async (req, res) => {
+    const { slug, quantity = 1, selectedAttributeValueIds = [] } = req.body;
 
-        const pricing = await ProductModel.getPricingForProductSelection({ slug, selectedAttributeValueIds });
-        if (!pricing) {
-            return res.status(404).json({ message: 'Product not found' });
-        }
-
-        const { product, unitFinal, cartItemKey, selectedAttributeValueIds: normalizedIds } = pricing;
-
-        const qty = parseQuantity(quantity);
-        if (qty === null || qty < 1) {
-            return res.status(400).json({ message: 'Quantity must be an integer of at least 1' });
-        }
-
-        const cart = getCart(req);
-        const existingItemIndex = cart.findIndex(item => (item.key || item.slug) === cartItemKey);
-
-        if (existingItemIndex > -1) {
-            cart[existingItemIndex].quantity += qty;
-        } else {
-            cart.push({
-                key: cartItemKey,
-                slug: product.slug,
-                product_id: product.id,
-                name: product.name,
-                price: parseFloat(unitFinal),
-                imagePath: product.imagePath || '/images/cloth_1.jpg',
-                quantity: qty,
-                selectedAttributeValueIds: normalizedIds,
-                recipients: []
-            });
-        }
-
-        const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-        res.json({ 
-            message: 'Product added to cart',
-            cart: cart,
-            count: totalCount
-        });
-    } catch (error) {
-        console.error('Error adding to cart:', error);
-        res.status(500).json({ message: 'Internal Server Error' });
+    if (!slug) {
+        return jsonError(res, 400, 'Product slug is required');
     }
-});
 
-router.put('/update/:key', (req, res) => {
-    try {
+    const pricing = await ProductModel.getPricingForProductSelection({ slug, selectedAttributeValueIds });
+    if (!pricing) {
+        return jsonError(res, 404, 'Product not found');
+    }
+
+    const { product, unitFinal, cartItemKey, selectedAttributeValueIds: normalizedIds } = pricing;
+
+    const qty = parseQuantity(quantity);
+    if (qty === null || qty < 1) {
+        return jsonError(res, 400, 'Quantity must be an integer of at least 1');
+    }
+
+    const cart = getCart(req);
+    const existingItemIndex = cart.findIndex(item => (item.key || item.slug) === cartItemKey);
+
+    if (existingItemIndex > -1) {
+        cart[existingItemIndex].quantity += qty;
+    } else {
+        cart.push({
+            key: cartItemKey,
+            slug: product.slug,
+            product_id: product.id,
+            name: product.name,
+            price: parseFloat(unitFinal),
+            imagePath: product.imagePath || '/images/cloth_1.jpg',
+            quantity: qty,
+            selectedAttributeValueIds: normalizedIds,
+            recipients: []
+        });
+    }
+
+    const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+    res.json({
+        message: 'Product added to cart',
+        cart: cart,
+        count: totalCount
+    });
+}));
+
+router.put('/update/:key', asyncHandler((req, res) => {
         const { key } = req.params;
         const { quantity, recipientName, dedication, recipients, recipientIndex } = req.body;
 
@@ -118,14 +119,14 @@ router.put('/update/:key', (req, res) => {
         const hasRecipientsArray = typeof recipients !== 'undefined';
         const hasRecipientIndex = typeof recipientIndex !== 'undefined';
         if (!hasQuantity && !hasRecipient && !hasDedication && !hasRecipientsArray && !hasRecipientIndex) {
-            return res.status(400).json({ message: 'Nothing to update' });
+            return jsonError(res, 400, 'Nothing to update');
         }
 
         let qty = null;
         if (hasQuantity) {
             qty = parseQuantity(quantity);
             if (qty === null || qty < 0) {
-                return res.status(400).json({ message: 'Quantity must be an integer (0 to remove, or 1+ to keep)' });
+                return jsonError(res, 400, 'Quantity must be an integer (0 to remove, or 1+ to keep)');
             }
         }
 
@@ -137,7 +138,7 @@ router.put('/update/:key', (req, res) => {
         const resolvedIndex = fallbackIndex;
 
         if (resolvedIndex === -1) {
-            return res.status(404).json({ message: 'Item not found in cart' });
+            return jsonError(res, 404, 'Item not found in cart');
         }
 
         if (hasQuantity) {
@@ -167,7 +168,7 @@ router.put('/update/:key', (req, res) => {
 
             if (hasRecipientsArray) {
                 if (!Array.isArray(recipients)) {
-                    return res.status(400).json({ message: 'Recipients must be an array' });
+                    return jsonError(res, 400, 'Recipients must be an array');
                 }
                 item.recipients = recipients
                     .slice(0, currentQty)
@@ -177,10 +178,10 @@ router.put('/update/:key', (req, res) => {
             if (hasRecipientIndex) {
                 const idx = Number.parseInt(recipientIndex, 10);
                 if (!Number.isFinite(idx) || idx < 0) {
-                    return res.status(400).json({ message: 'recipientIndex must be a non-negative integer' });
+                    return jsonError(res, 400, 'recipientIndex must be a non-negative integer');
                 }
                 if (idx >= currentQty) {
-                    return res.status(400).json({ message: 'recipientIndex out of range for current quantity' });
+                    return jsonError(res, 400, 'recipientIndex out of range for current quantity');
                 }
 
                 const prev = arr[idx] || { recipientName: null, dedication: null };
@@ -200,14 +201,9 @@ router.put('/update/:key', (req, res) => {
             cart: cart,
             count: totalCount
         });
-    } catch (error) {
-        console.error('Error updating cart:', error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
-});
+}));
 
-router.delete('/remove/:key', (req, res) => {
-    try {
+router.delete('/remove/:key', asyncHandler((req, res) => {
         const { key } = req.params;
         const cart = getCart(req);
 
@@ -216,7 +212,7 @@ router.delete('/remove/:key', (req, res) => {
         const resolvedIndex = fallbackIndex;
 
         if (resolvedIndex === -1) {
-            return res.status(404).json({ message: 'Item not found in cart' });
+            return jsonError(res, 404, 'Item not found in cart');
         }
 
         cart.splice(resolvedIndex, 1);
@@ -227,11 +223,7 @@ router.delete('/remove/:key', (req, res) => {
             cart: cart,
             count: totalCount
         });
-    } catch (error) {
-        console.error('Error removing from cart:', error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
-});
+}));
 
 router.delete('/clear', (req, res) => {
     req.session.cart = [];
