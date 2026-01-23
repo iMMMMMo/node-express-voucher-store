@@ -36,6 +36,7 @@ app.use(session({
 
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require('./routes/shop');
+const checkoutRoutes = require('./routes/checkout');
 const authRoutes = require('./routes/auth');
 const accountRoutes = require('./routes/account');
 const addressesRoutes = require('./routes/addresses');
@@ -46,6 +47,7 @@ const errorHandler = require('./middleware/errorHandler');
 
 app.use("/admin", adminRoutes);
 app.use('/', shopRoutes);
+app.use('/', checkoutRoutes);
 app.use('/', authRoutes);
 app.use('/', accountRoutes);
 app.use('/', addressesRoutes);
