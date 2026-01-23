@@ -9,78 +9,9 @@ const prisma = require('../prisma/prismaClient');
 const { Prisma } = require('@prisma/client');
 const sanitizeHtml = require('sanitize-html');
 const asyncHandler = require('../utils/asyncHandler');
-const { toNumber, decimalToNumber } = require('../utils/number');
+const { decimalToNumber } = require('../utils/number');
 const { normalizeText } = require('../utils/text');
-
-const normalizeSelectedAttributeValueIds = (value) => {
-    const arr = Array.isArray(value) ? value : (value ? [value] : []);
-    const parsed = arr
-        .map((v) => Number.parseInt(v, 10))
-        .filter((v) => Number.isFinite(v) && v > 0);
-    return Array.from(new Set(parsed)).sort((a, b) => a - b);
-};
-
-const repairCartPrices = async (cart) => {
-    if (!Array.isArray(cart) || !cart.length) return cart;
-
-    const slugs = cart.map(i => i.slug).filter(Boolean);
-    const products = await prisma.product.findMany({
-        where: { slug: { in: slugs } },
-        select: { id: true, slug: true, basePrice: true, vat: true, imagePath: true, name: true }
-    });
-    const bySlug = new Map(products.map(p => [p.slug, p]));
-
-    const allSelectedIds = cart
-        .flatMap((item) => normalizeSelectedAttributeValueIds(item.selectedAttributeValueIds))
-        .filter(Boolean);
-    const uniqueSelectedIds = Array.from(new Set(allSelectedIds));
-
-    const selectedRows = uniqueSelectedIds.length
-        ? await prisma.productAttributeValue.findMany({
-            where: { id: { in: uniqueSelectedIds } },
-            include: { attribute: true }
-        })
-        : [];
-    const selectedById = new Map(selectedRows.map(r => [r.id, r]));
-
-    cart.forEach((item) => {
-        const p = bySlug.get(item.slug);
-        if (!p) return;
-
-        const base = toNumber(p.basePrice) ?? 0;
-        const vat = toNumber(p.vat) ?? 0;
-        const vatFactor = 1 + vat / 100;
-
-        const ids = normalizeSelectedAttributeValueIds(item.selectedAttributeValueIds);
-        const selectedAttributes = ids
-            .map((id) => {
-                const row = selectedById.get(id);
-                if (!row || row.productId !== p.id) return null;
-                return {
-                    attributeId: row.attributeId,
-                    attributeName: row.attribute?.name,
-                    valueId: row.id,
-                    value: row.value,
-                    priceDelta: toNumber(row.priceDelta) ?? 0,
-                };
-            })
-            .filter(Boolean);
-
-        item.selectedAttributes = selectedAttributes.length ? selectedAttributes : null;
-
-        const deltaGrossSum = selectedAttributes.reduce((sum, row) => sum + (Number(row.priceDelta) || 0), 0);
-
-        const deltaNetSum = vatFactor > 0 ? (deltaGrossSum / vatFactor) : deltaGrossSum;
-        const unitBase = base + deltaNetSum;
-        const unitFinal = unitBase * vatFactor;
-
-        item.price = Number.isFinite(unitFinal) ? unitFinal : 0;
-        if (!item.name) item.name = p.name;
-        if (!item.imagePath) item.imagePath = p.imagePath || '/images/cloth_1.jpg';
-    });
-
-    return cart;
-};
+const { repairCartPrices, priceCartForOrder } = require('../services/cartPricingService');
 
 router.use(attachUser);
 router.use(attachStoreNavigation);
@@ -271,6 +202,13 @@ router.post('/checkout', authRequired, asyncHandler(async (req, res) => {
         return res.redirect('/cart?reason=empty');
     }
 
+    try {
+        await repairCartPrices(cart);
+        req.session.cart = cart;
+    } catch (error) {
+        console.error('Error repairing checkout cart prices:', error);
+    }
+
     const paymentMethod = (req.body.paymentMethod || '').trim();
     const deliveryMethod = (req.body.deliveryMethod || '').trim();
     const allowedDelivery = new Set(['E_DELIVERY', 'COURIER']);
@@ -375,100 +313,8 @@ router.post('/checkout', authRequired, asyncHandler(async (req, res) => {
             deliveryAddressId = created.id;
         }
 
-        const slugs = cart.map(i => i.slug).filter(Boolean);
-        const products = await prisma.product.findMany({
-            where: { slug: { in: slugs } },
-            select: { id: true, slug: true, basePrice: true, vat: true }
-        });
-        const bySlug = new Map(products.map(p => [p.slug, p]));
-
-        const allSelectedIds = cart
-            .flatMap((item) => normalizeSelectedAttributeValueIds(item.selectedAttributeValueIds))
-            .filter(Boolean);
-        const uniqueSelectedIds = Array.from(new Set(allSelectedIds));
-
-        const selectedRows = uniqueSelectedIds.length
-            ? await prisma.productAttributeValue.findMany({
-                where: { id: { in: uniqueSelectedIds } },
-                include: { attribute: true }
-            })
-            : [];
-        const selectedById = new Map(selectedRows.map(r => [r.id, r]));
-
-        for (const item of cart) {
-            if (!bySlug.has(item.slug)) {
-                const total = cart.reduce((sum, i) => sum + ((Number(i.price) || 0) * (Number(i.quantity) || 0)), 0)
-                    + deliveryPriceNumber + paymentPriceNumber;
-                return res.status(400).render('checkout', {
-                    title: 'Checkout | Voucher Shop',
-                    activePage: '',
-                    cart,
-                    total,
-                    errors: [{ msg: `Product "${item.slug}" is no longer available.` }],
-                    formData: { paymentMethod, deliveryMethod }
-                });
-            }
-        }
-
-        const pricedItems = cart.map((item) => {
-            const p = bySlug.get(item.slug);
-            const qty = Math.max(1, Number.parseInt(item.quantity, 10) || 1);
-
-            const base = toNumber(p.basePrice) ?? 0;
-            const vat = toNumber(p.vat) ?? 0;
-            const vatFactor = 1 + vat / 100;
-
-            const ids = normalizeSelectedAttributeValueIds(item.selectedAttributeValueIds);
-            const selectedAttributes = ids.map((id) => {
-                const row = selectedById.get(id);
-                if (!row || row.productId !== p.id) return null;
-                return {
-                    attributeId: row.attributeId,
-                    attributeName: row.attribute?.name,
-                    valueId: row.id,
-                    value: row.value,
-                    priceDelta: toNumber(row.priceDelta) ?? 0,
-                };
-            }).filter(Boolean);
-
-            if (ids.length && selectedAttributes.length !== ids.length) {
-                return { error: `Invalid attribute selection for product "${item.slug}".` };
-            }
-
-            const deltaGrossSum = selectedAttributes.reduce((sum, row) => sum + (Number(row.priceDelta) || 0), 0);
-            const deltaNetSum = vatFactor > 0 ? (deltaGrossSum / vatFactor) : deltaGrossSum;
-            const unitBase = base + deltaNetSum;
-            const unitFinal = unitBase * vatFactor;
-            const lineFinal = unitFinal * qty;
-
-            const recipientsRaw = Array.isArray(item.recipients) ? item.recipients : [];
-            const legacyEntry = ((item.recipientName ?? '') || (item.dedication ?? ''))
-                ? { recipientName: item.recipientName, dedication: item.dedication }
-                : null;
-            const effectiveRecipients = recipientsRaw.length ? recipientsRaw : (legacyEntry ? [legacyEntry] : []);
-            const recipients = Array.from({ length: qty }).map((_, idx) => {
-                const src = effectiveRecipients[idx];
-                if (!src) return null;
-                const rn = (src.recipientName ?? '').toString().trim().slice(0, 60) || null;
-                const dd = (src.dedication ?? '').toString().trim().slice(0, 1000) || null;
-                if (!rn && !dd) return null;
-                return { recipientName: rn, dedication: dd };
-            });
-
-            return {
-                productId: p.id,
-                qty,
-                unitBase,
-                unitFinal,
-                vat,
-                lineFinal,
-                selectedAttributes,
-                recipients,
-            };
-        });
-
-        const invalid = pricedItems.find((x) => x && x.error);
-        if (invalid) {
+        const priced = await priceCartForOrder(cart);
+        if (!priced.ok) {
             const total = cart.reduce((sum, i) => sum + ((Number(i.price) || 0) * (Number(i.quantity) || 0)), 0)
                 + deliveryPriceNumber + paymentPriceNumber;
             return res.status(400).render('checkout', {
@@ -476,10 +322,12 @@ router.post('/checkout', authRequired, asyncHandler(async (req, res) => {
                 activePage: '',
                 cart,
                 total,
-                errors: [{ msg: invalid.error }],
+                errors: [{ msg: priced.error }],
                 formData: { paymentMethod, deliveryMethod }
             });
         }
+
+        const pricedItems = priced.items;
 
         const itemsTotal = pricedItems.reduce((sum, it) => sum + (Number(it.lineFinal) || 0), 0);
         const total = itemsTotal + deliveryPriceNumber + paymentPriceNumber;

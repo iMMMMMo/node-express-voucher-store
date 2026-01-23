@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const ProductModel = require('../../models/productModel');
 const asyncHandler = require('../../utils/asyncHandler');
 const { parseIntSafe } = require('../../utils/number');
 const { normalizeText } = require('../../utils/text');
+const { repairCartPrices, getPricingForProductSelection } = require('../../services/cartPricingService');
 
 const jsonError = (res, status, message) => res.status(status).json({
     ok: false,
@@ -40,10 +40,12 @@ const ensureRecipientsArray = (item) => {
     return item.recipients;
 };
 
-router.get('/', (req, res) => {
+router.get('/', asyncHandler(async (req, res) => {
     const cart = getCart(req);
+    await repairCartPrices(cart);
+    req.session.cart = cart;
     res.json(cart);
-});
+}));
 
 router.get('/count', (req, res) => {
     const cart = getCart(req);
@@ -58,7 +60,7 @@ router.post('/add', asyncHandler(async (req, res) => {
         return jsonError(res, 400, 'Product slug is required');
     }
 
-    const pricing = await ProductModel.getPricingForProductSelection({ slug, selectedAttributeValueIds });
+    const pricing = await getPricingForProductSelection({ slug, selectedAttributeValueIds });
     if (!pricing) {
         return jsonError(res, 404, 'Product not found');
     }
