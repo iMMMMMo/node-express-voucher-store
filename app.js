@@ -34,26 +34,14 @@ app.use(session({
     }),
 }));
 
-const adminRoutes = require("./routes/admin");
-const shopRoutes = require('./routes/shop');
-const checkoutRoutes = require('./routes/checkout');
-const authRoutes = require('./routes/auth');
-const accountRoutes = require('./routes/account');
-const addressesRoutes = require('./routes/addresses');
-const ordersRoutes = require('./routes/orders');
-const productApiRoutes = require('./routes/api/products');
-const cartApiRoutes = require('./routes/api/cart');
+const adminRoutes = require('./routes/admin');
+const webRoutes = require('./routes/web');
+const apiRoutes = require('./routes/api');
 const errorHandler = require('./middleware/errorHandler');
 
 app.use("/admin", adminRoutes);
-app.use('/', shopRoutes);
-app.use('/', checkoutRoutes);
-app.use('/', authRoutes);
-app.use('/', accountRoutes);
-app.use('/', addressesRoutes);
-app.use('/', ordersRoutes);
-app.use('/api/products', productApiRoutes);
-app.use('/api/cart', cartApiRoutes);
+app.use('/', webRoutes);
+app.use('/api', apiRoutes);
 app.use(errorHandler);
 
 app.listen(port, () => {
