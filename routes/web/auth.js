@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const UserModel = require('../models/userModel');
-const attachUser = require('../middleware/attachUser');
-const attachStoreNavigation = require('../middleware/attachStoreNavigation');
-const asyncHandler = require('../utils/asyncHandler');
+
+const UserModel = require('../../models/userModel');
+const attachUser = require('../../middleware/attachUser');
+const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
+const asyncHandler = require('../../utils/asyncHandler');
 
 router.use(attachUser);
 router.use(attachStoreNavigation);
@@ -53,7 +54,7 @@ router.post('/register', [
         })
 ], asyncHandler(async (req, res) => {
     const errors = validationResult(req);
-    
+
     if (!errors.isEmpty()) {
         return res.render('register', {
             title: 'Register | Voucher Shop',
@@ -83,7 +84,7 @@ router.post('/register', [
         }
 
         const user = await UserModel.create(email, password, name, phone);
-        
+
         req.session.userId = user.id;
         req.session.userEmail = user.email;
         req.session.userName = user.name;
@@ -128,7 +129,7 @@ router.post('/login', [
         .withMessage('Password is required')
 ], asyncHandler(async (req, res) => {
     const errors = validationResult(req);
-    
+
     if (!errors.isEmpty()) {
         return res.render('login', {
             title: 'Login | Voucher Shop',
@@ -196,4 +197,3 @@ router.post('/logout', (req, res) => {
 });
 
 module.exports = router;
-

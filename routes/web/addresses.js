@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const { body, param, validationResult } = require('express-validator');
 
-const attachUser = require('../middleware/attachUser');
-const attachStoreNavigation = require('../middleware/attachStoreNavigation');
-const authRequired = require('../middleware/authRequired');
-const UserAddressModel = require('../models/userAddressModel');
-const asyncHandler = require('../utils/asyncHandler');
+const attachUser = require('../../middleware/attachUser');
+const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
+const authRequired = require('../../middleware/authRequired');
+const UserAddressModel = require('../../models/userAddressModel');
+const asyncHandler = require('../../utils/asyncHandler');
 
 router.use(attachUser);
 router.use(attachStoreNavigation);

@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 
-const prisma = require('../prisma/prismaClient');
-const attachUser = require('../middleware/attachUser');
-const attachStoreNavigation = require('../middleware/attachStoreNavigation');
-const authRequired = require('../middleware/authRequired');
-const asyncHandler = require('../utils/asyncHandler');
-const { decimalToNumber } = require('../utils/number');
+const prisma = require('../../prisma/prismaClient');
+const attachUser = require('../../middleware/attachUser');
+const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
+const authRequired = require('../../middleware/authRequired');
+const asyncHandler = require('../../utils/asyncHandler');
+const { decimalToNumber } = require('../../utils/number');
 
 router.use(attachUser);
 router.use(attachStoreNavigation);

@@ -1,16 +1,16 @@
 const express = require('express');
 const router = express.Router();
 
-const attachUser = require('../middleware/attachUser');
-const attachStoreNavigation = require('../middleware/attachStoreNavigation');
-const authRequired = require('../middleware/authRequired');
-const asyncHandler = require('../utils/asyncHandler');
+const attachUser = require('../../middleware/attachUser');
+const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
+const authRequired = require('../../middleware/authRequired');
+const asyncHandler = require('../../utils/asyncHandler');
 
 const {
     getCheckoutPageData,
     placeCheckoutOrder,
     getThankyouPageData,
-} = require('../services/checkoutService');
+} = require('../../services/checkoutService');
 
 router.use(attachUser);
 router.use(attachStoreNavigation);
