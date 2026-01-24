@@ -5,47 +5,21 @@ const ProductModel = require('../../models/productModel');
 const PageModel = require('../../models/pageModel');
 const attachUser = require('../../middleware/attachUser');
 const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
-const prisma = require('../../prisma/prismaClient');
 const sanitizeHtml = require('sanitize-html');
+
+const { getActiveBannersForHomepage } = require('../../services/bannerService');
 
 router.use(attachUser);
 router.use(attachStoreNavigation);
 
-const normalizeBannerLink = (value) => {
-    const link = (value ?? '').toString().trim();
-    if (!link) return null;
-    if (link.startsWith('/')) return link;
-    if (/^https?:\/\//i.test(link)) return link;
-    return null;
-};
-
 router.get('/', async (req, res) => {
     try {
-        const banners = await prisma.banner.findMany({
-            where: { isActive: true },
-            orderBy: [{ order: 'asc' }, { id: 'asc' }],
-            select: {
-                id: true,
-                imagePath: true,
-                caption: true,
-                content: true,
-                button: true,
-                link: true,
-                order: true,
-            },
-        });
+        const banners = await getActiveBannersForHomepage();
 
         res.render('index', {
             title: 'Home | Voucher Shop',
             activePage: 'home',
-            banners: (banners || []).map((b) => ({
-                id: b.id,
-                imagePath: b.imagePath || null,
-                caption: b.caption || null,
-                content: b.content || null,
-                button: b.button || null,
-                link: normalizeBannerLink(b.link),
-            })),
+            banners,
         });
     } catch (error) {
         console.error('Error loading banners for homepage:', error);

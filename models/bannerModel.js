@@ -1,6 +1,22 @@
 const prisma = require("../prisma/prismaClient");
 
 const BannerModel = {
+  findActiveForHomepage: async () => {
+    return await prisma.banner.findMany({
+      where: { isActive: true },
+      orderBy: [{ order: "asc" }, { id: "asc" }],
+      select: {
+        id: true,
+        imagePath: true,
+        caption: true,
+        content: true,
+        button: true,
+        link: true,
+        order: true,
+      },
+    });
+  },
+
   findAllByUserId: async (userId) => {
     if (!userId) return [];
 
