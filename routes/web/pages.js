@@ -2,14 +2,9 @@ const express = require('express');
 const router = express.Router();
 
 const PageModel = require('../../models/pageModel');
-const attachUser = require('../../middleware/attachUser');
-const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
 const { sanitizeHtml } = require('../../utils/sanitizeHtml');
 
-router.use(attachUser);
-router.use(attachStoreNavigation);
-
-router.get('/p/:url', async (req, res) => {
+router.get('/:url', async (req, res) => {
     try {
         const url = req.params.url;
         const page = await PageModel.findActiveByUrl(url);

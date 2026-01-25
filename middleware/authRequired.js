@@ -3,7 +3,7 @@ const authRequired = (req, res, next) => {
         return next();
     }
     req.session.returnTo = req.originalUrl;
-    res.redirect('/login');
+    res.redirect('/auth/login');
 };
 
 module.exports = authRequired;

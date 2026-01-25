@@ -2,34 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const ProductModel = require('../../models/productModel');
-const attachUser = require('../../middleware/attachUser');
-const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
-
-const { getActiveBannersForHomepage } = require('../../services/bannerService');
-
-router.use(attachUser);
-router.use(attachStoreNavigation);
 
 router.get('/', async (req, res) => {
-    try {
-        const banners = await getActiveBannersForHomepage();
-
-        res.render('index', {
-            title: 'Home | Voucher Shop',
-            activePage: 'home',
-            banners,
-        });
-    } catch (error) {
-        console.error('Error loading banners for homepage:', error);
-        res.render('index', {
-            title: 'Home | Voucher Shop',
-            activePage: 'home',
-            banners: [],
-        });
-    }
-});
-
-router.get('/shop', async (req, res) => {
     try {
         const products = await ProductModel.findAll();
         res.render('shop', {
@@ -48,7 +22,7 @@ router.get('/shop', async (req, res) => {
     }
 });
 
-router.get('/shop-single/:slug', async (req, res) => {
+router.get('/:slug', async (req, res) => {
     try {
         const slug = req.params.slug;
         const product = await ProductModel.findProduct({ slug });

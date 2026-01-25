@@ -1,15 +1,10 @@
 const express = require('express');
 const router = express.Router();
 
-const attachUser = require('../../middleware/attachUser');
-const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
 const asyncHandler = require('../../utils/asyncHandler');
 const { repairCartPrices } = require('../../services/cartPricingService');
 
-router.use(attachUser);
-router.use(attachStoreNavigation);
-
-router.get('/cart', asyncHandler(async (req, res) => {
+router.get('/', asyncHandler(async (req, res) => {
     const cart = req.session.cart || [];
     const reason = (req.query.reason || '').toString();
     const notice = reason === 'empty'

@@ -2,14 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { body, param, validationResult } = require('express-validator');
 
-const attachUser = require('../../middleware/attachUser');
-const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
 const authRequired = require('../../middleware/authRequired');
 const UserAddressModel = require('../../models/userAddressModel');
 const asyncHandler = require('../../utils/asyncHandler');
-
-router.use(attachUser);
-router.use(attachStoreNavigation);
 
 const isPoland = (country) => {
     const c = (country || '').toString().trim().toLowerCase();
@@ -55,7 +50,7 @@ const renderAddresses = async (req, res, { status = 200, errors = null, success 
     });
 };
 
-router.get('/addresses', authRequired, asyncHandler(async (req, res) => {
+router.get('/', authRequired, asyncHandler(async (req, res) => {
     const success = (req.query.success || '').toString();
     const msg = success === 'created'
         ? 'Address added.'
@@ -68,7 +63,7 @@ router.get('/addresses', authRequired, asyncHandler(async (req, res) => {
     return renderAddresses(req, res, { success: msg });
 }));
 
-router.post('/addresses', [
+router.post('/', [
     authRequired,
     body('street').trim().isLength({ min: 2 }).withMessage('Street is required'),
     body('city').trim().isLength({ min: 2 }).withMessage('City is required'),
@@ -107,7 +102,7 @@ router.post('/addresses', [
     }
 }));
 
-router.get('/addresses/:id/edit', [
+router.get('/:id/edit', [
     authRequired,
     param('id').isInt({ min: 1 }).withMessage('Invalid address id')
 ], asyncHandler(async (req, res) => {
@@ -144,7 +139,7 @@ router.get('/addresses/:id/edit', [
     });
 }));
 
-router.post('/addresses/:id/edit', [
+router.post('/:id/edit', [
     authRequired,
     param('id').isInt({ min: 1 }).withMessage('Invalid address id'),
     body('street').trim().isLength({ min: 2 }).withMessage('Street is required'),
@@ -214,7 +209,7 @@ router.post('/addresses/:id/edit', [
     }
 }));
 
-router.post('/addresses/:id/default', [
+router.post('/:id/default', [
     authRequired,
     param('id').isInt({ min: 1 }).withMessage('Invalid address id')
 ], asyncHandler(async (req, res) => {
@@ -246,7 +241,7 @@ router.post('/addresses/:id/default', [
     }
 }));
 
-router.post('/addresses/:id/delete', [
+router.post('/:id/delete', [
     authRequired,
     param('id').isInt({ min: 1 }).withMessage('Invalid address id')
 ], asyncHandler(async (req, res) => {

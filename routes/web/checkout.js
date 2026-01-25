@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 
-const attachUser = require('../../middleware/attachUser');
-const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
 const authRequired = require('../../middleware/authRequired');
 const asyncHandler = require('../../utils/asyncHandler');
 
@@ -12,10 +10,7 @@ const {
     getThankyouPageData,
 } = require('../../services/checkoutService');
 
-router.use(attachUser);
-router.use(attachStoreNavigation);
-
-router.get('/checkout', authRequired, asyncHandler(async (req, res) => {
+router.get('/', authRequired, asyncHandler(async (req, res) => {
     const cart = req.session.cart || [];
 
     const data = await getCheckoutPageData({
@@ -40,7 +35,7 @@ router.get('/checkout', authRequired, asyncHandler(async (req, res) => {
     });
 }));
 
-router.post('/checkout', authRequired, asyncHandler(async (req, res) => {
+router.post('/', authRequired, asyncHandler(async (req, res) => {
     const cart = req.session.cart || [];
 
     const result = await placeCheckoutOrder({
@@ -71,7 +66,7 @@ router.post('/checkout', authRequired, asyncHandler(async (req, res) => {
 
     req.session.cart = [];
     req.session.lastOrderId = result.orderId;
-    return res.redirect('/thankyou');
+    return res.redirect('/checkout/thankyou');
 }));
 
 router.get('/thankyou', authRequired, asyncHandler(async (req, res) => {

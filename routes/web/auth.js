@@ -3,12 +3,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 
 const UserModel = require('../../models/userModel');
-const attachUser = require('../../middleware/attachUser');
-const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
 const asyncHandler = require('../../utils/asyncHandler');
-
-router.use(attachUser);
-router.use(attachStoreNavigation);
 
 router.get('/register', (req, res) => {
     if (req.session.userId) {

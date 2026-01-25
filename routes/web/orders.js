@@ -2,16 +2,11 @@ const express = require('express');
 const router = express.Router();
 
 const prisma = require('../../prisma/prismaClient');
-const attachUser = require('../../middleware/attachUser');
-const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
 const authRequired = require('../../middleware/authRequired');
 const asyncHandler = require('../../utils/asyncHandler');
 const { decimalToNumber } = require('../../utils/number');
 
-router.use(attachUser);
-router.use(attachStoreNavigation);
-
-router.get('/orders', authRequired, asyncHandler(async (req, res) => {
+router.get('/', authRequired, asyncHandler(async (req, res) => {
   const orders = await prisma.order.findMany({
     where: { userId: req.session.userId },
     orderBy: { createdAt: 'desc' },
@@ -37,7 +32,7 @@ router.get('/orders', authRequired, asyncHandler(async (req, res) => {
   });
 }));
 
-router.get('/orders/:id', authRequired, asyncHandler(async (req, res) => {
+router.get('/:id', authRequired, asyncHandler(async (req, res) => {
   const orderId = Number.parseInt(req.params.id, 10);
   if (!Number.isFinite(orderId) || orderId <= 0) {
     return res.status(400).render('order-details', {

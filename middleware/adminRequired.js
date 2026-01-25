@@ -3,7 +3,7 @@ const adminRequired = (req, res, next) => {
         if (req.session) {
             req.session.returnTo = req.originalUrl;
         }
-        return res.redirect('/login');
+        return res.redirect('/auth/login');
     }
 
     if (req.session.userRole !== 'admin') {

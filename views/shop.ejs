@@ -27,12 +27,12 @@
               <div class="col-sm-6 col-lg-4 mb-4" data-aos="fade-up">
                 <div class="block-4 text-center border" style="height: 100%; display: flex; flex-direction: column;">
                   <figure class="block-4-image" style="flex-shrink: 0;">
-                    <a href="/shop-single/<%= product.slug %>">
+                    <a href="/shop/<%= product.slug %>">
                       <img src="<%= product.imagePath || '/images/cloth_1.jpg' %>" alt="<%= product.name %>" class="img-fluid" style="height: 250px; object-fit: cover; width: 100%;">
                     </a>
                   </figure>
                   <div class="block-4-text p-4" style="flex: 1; display: flex; flex-direction: column;">
-                    <h3 style="min-height: 3rem;"><a href="/shop-single/<%= product.slug %>"><%= product.name %></a></h3>
+                    <h3 style="min-height: 3rem;"><a href="/shop/<%= product.slug %>"><%= product.name %></a></h3>
                     <p class="mb-2" style="flex: 1; min-height: 3rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"><%= product.description ? (product.description.length > 80 ? product.description.substring(0, 80) + '...' : product.description) : 'No description' %></p>
                     <p class="text-primary font-weight-bold mt-auto" style="margin-top: auto;"><%= parseFloat(product.finalPrice).toFixed(2) %> PLN</p>
                     <button 

@@ -3,13 +3,8 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 
 const UserModel = require('../../models/userModel');
-const attachUser = require('../../middleware/attachUser');
-const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
 const authRequired = require('../../middleware/authRequired');
 const asyncHandler = require('../../utils/asyncHandler');
-
-router.use(attachUser);
-router.use(attachStoreNavigation);
 
 const normalizePhoneParts = ({ phonePrefixDigits, phoneNumber, phone }) => {
     const prefixDigits = (phonePrefixDigits || '').toString().trim();
@@ -40,10 +35,10 @@ const renderAccount = async (req, res, { status = 200, errors = null, success = 
 
     if (!user) {
         if (req.session) {
-            req.session.destroy(() => res.redirect('/login'));
+            req.session.destroy(() => res.redirect('/auth/login'));
             return;
         }
-        return res.redirect('/login');
+        return res.redirect('/auth/login');
     }
 
     const defaultPhoneParts = splitPhone(user.phone);
@@ -63,7 +58,7 @@ const renderAccount = async (req, res, { status = 200, errors = null, success = 
     });
 };
 
-router.get('/account', authRequired, asyncHandler(async (req, res) => {
+router.get('/', authRequired, asyncHandler(async (req, res) => {
     const updated = (req.query.updated || '').toString();
     const success = updated === 'profile'
         ? 'Your profile has been updated.'
@@ -72,7 +67,7 @@ router.get('/account', authRequired, asyncHandler(async (req, res) => {
     return renderAccount(req, res, { success });
 }));
 
-router.post('/account', [
+router.post('/', [
     authRequired,
     body('email')
         .isEmail()
@@ -162,7 +157,7 @@ router.post('/account', [
     }
 }));
 
-router.post('/account/password', [
+router.post('/password', [
     authRequired,
     body('currentPassword')
         .notEmpty()
@@ -189,10 +184,10 @@ router.post('/account/password', [
 
         if (!user) {
             if (req.session) {
-                req.session.destroy(() => res.redirect('/login'));
+                req.session.destroy(() => res.redirect('/auth/login'));
                 return;
             }
-            return res.redirect('/login');
+            return res.redirect('/auth/login');
         }
 
         const ok = await UserModel.verifyPassword(req.body.currentPassword, user.password);
