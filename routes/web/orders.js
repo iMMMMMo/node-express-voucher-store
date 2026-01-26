@@ -1,19 +1,13 @@
 const express = require('express');
 const router = express.Router();
 
-const prisma = require('../../prisma/prismaClient');
+const OrderModel = require('../../models/orderModel');
 const authRequired = require('../../middleware/authRequired');
 const asyncHandler = require('../../utils/asyncHandler');
 const { decimalToNumber } = require('../../utils/number');
 
 router.get('/', authRequired, asyncHandler(async (req, res) => {
-  const orders = await prisma.order.findMany({
-    where: { userId: req.session.userId },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      _count: { select: { items: true } },
-    }
-  });
+  const orders = await OrderModel.findAllForUserWithItemsCount(req.session.userId);
 
   res.render('orders', {
     title: 'My Orders | Voucher Shop',
@@ -44,17 +38,7 @@ router.get('/:id', authRequired, asyncHandler(async (req, res) => {
     });
   }
 
-  const order = await prisma.order.findFirst({
-    where: { id: orderId, userId: req.session.userId },
-    include: {
-      user: { select: { email: true, name: true } },
-      deliveryAddress: true,
-      items: {
-        include: { product: { select: { name: true, slug: true } } },
-        orderBy: { id: 'asc' }
-      }
-    }
-  });
+  const order = await OrderModel.findByIdForUserWithDetails(orderId, req.session.userId);
 
   if (!order) {
     return res.status(404).render('order-details', {
