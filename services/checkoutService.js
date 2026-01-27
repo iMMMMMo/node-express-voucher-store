@@ -1,8 +1,8 @@
-const prisma = require('../prisma/prismaClient');
-const { Prisma } = require('@prisma/client');
 const { normalizeText } = require('../utils/text');
 const { decimalToNumber } = require('../utils/number');
 const { repairCartPrices, priceCartForOrder } = require('./cartPricingService');
+const UserAddressModel = require('../models/userAddressModel');
+const OrderModel = require('../models/orderModel');
 
 const validatePostalCode = (postalCode, countryRaw) => {
     const country = normalizeText(countryRaw) ?? '';
@@ -21,10 +21,7 @@ const calculateCartTotal = (cart) => {
 
 const getDeliveryAddressesForUser = async (userId) => {
     try {
-        return await prisma.userAddress.findMany({
-            where: { userId, type: 'delivery' },
-            orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
-        });
+        return await UserAddressModel.listDeliveryByUserId(userId);
     } catch (error) {
         console.error('Error fetching delivery addresses for checkout:', error);
         return [];
@@ -164,21 +161,6 @@ const placeCheckoutOrder = async ({ userId, cart, body }) => {
     }
 
     try {
-        if (deliveryMethod === 'COURIER' && !deliveryAddressId) {
-            const created = await prisma.userAddress.create({
-                data: {
-                    userId,
-                    street: shippingStreet,
-                    city: shippingCity,
-                    postalCode: shippingPostalCode,
-                    country: shippingCountry,
-                    type: 'delivery',
-                    isDefault: false,
-                },
-            });
-            deliveryAddressId = created.id;
-        }
-
         const priced = await priceCartForOrder(cart);
         if (!priced.ok) {
             return {
@@ -194,49 +176,24 @@ const placeCheckoutOrder = async ({ userId, cart, body }) => {
             };
         }
 
-        const pricedItems = priced.items;
+        const newDeliveryAddress = (deliveryMethod === 'COURIER' && !deliveryAddressId)
+            ? {
+                street: shippingStreet,
+                city: shippingCity,
+                postalCode: shippingPostalCode,
+                country: shippingCountry,
+            }
+            : null;
 
-        const itemsTotal = pricedItems.reduce((sum, it) => sum + (Number(it.lineFinal) || 0), 0);
-        const total = itemsTotal + deliveryPriceNumber + paymentPriceNumber;
-
-        const order = await prisma.$transaction(async (tx) => {
-            const createdOrder = await tx.order.create({
-                data: {
-                    userId,
-                    deliveryAddressId: deliveryMethod === 'COURIER' ? deliveryAddressId : null,
-                    totalPrice: new Prisma.Decimal(total.toFixed(2)),
-                    status: 'PLACED',
-                    paymentMethod,
-                    paymentPrice: new Prisma.Decimal(paymentPriceNumber.toFixed(2)),
-                    paymentStatus: 'UNPAID',
-                    deliveryMethod,
-                    deliveryPrice: new Prisma.Decimal(deliveryPriceNumber.toFixed(2)),
-                    items: {
-                        create: pricedItems.flatMap((it) => {
-                            const perUnit = [];
-                            for (let i = 0; i < it.qty; i++) {
-                                const rec = Array.isArray(it.recipients) ? it.recipients[i] : null;
-                                perUnit.push({
-                                    productId: it.productId,
-                                    quantity: 1,
-                                    unitPrice: new Prisma.Decimal(Number(it.unitBase || 0).toFixed(2)),
-                                    vat: new Prisma.Decimal(Number(it.vat || 0).toFixed(2)),
-                                    finalPrice: new Prisma.Decimal(Number(it.unitFinal || 0).toFixed(2)),
-                                    selectedAttributes:
-                                        it.selectedAttributes && it.selectedAttributes.length ? it.selectedAttributes : null,
-                                    recipientName: rec?.recipientName ?? null,
-                                    dedication: rec?.dedication ?? null,
-                                    status: 'ACTIVE',
-                                });
-                            }
-                            return perUnit;
-                        }),
-                    },
-                },
-                include: { items: true },
-            });
-
-            return createdOrder;
+        const order = await OrderModel.placeCheckoutOrder({
+            userId,
+            paymentMethod,
+            deliveryMethod,
+            deliveryPriceNumber,
+            paymentPriceNumber,
+            deliveryAddressId,
+            newDeliveryAddress,
+            pricedItems: priced.items,
         });
 
         return {
@@ -273,19 +230,7 @@ const getThankyouPageData = async ({ userId, orderId }) => {
         return { ok: false, status: 400, error: 'Invalid order id.' };
     }
 
-    const order = await prisma.order.findFirst({
-        where: { id: resolvedId, userId },
-        include: {
-            user: { select: { email: true, name: true } },
-            deliveryAddress: true,
-            items: {
-                include: {
-                    product: { select: { name: true, slug: true } },
-                },
-                orderBy: { id: 'asc' },
-            },
-        },
-    });
+    const order = await OrderModel.findByIdForUserWithDetails(resolvedId, userId);
 
     if (!order) {
         return { ok: false, status: 404, error: 'Order not found.' };

@@ -1,5 +1,5 @@
-const prisma = require('../prisma/prismaClient');
 const { toNumber } = require('../utils/number');
+const ProductPricingModel = require('../models/productPricingModel');
 
 const normalizeSelectedAttributeValueIds = (value) => {
     const arr = Array.isArray(value) ? value : (value ? [value] : []);
@@ -19,25 +19,16 @@ const getSelectedAttributeRowsForProduct = async ({ productId, selectedAttribute
     const ids = normalizeSelectedAttributeValueIds(selectedAttributeValueIds);
     if (!ids.length) return [];
 
-    return prisma.productAttributeValue.findMany({
-        where: {
-            id: { in: ids },
-            productId,
-        },
-        include: {
-            attribute: true,
-        },
-        orderBy: { id: 'asc' },
+    return ProductPricingModel.findAttributeValuesForProductWithAttribute({
+        productId,
+        ids,
     });
 };
 
 const getPricingForProductSelection = async ({ slug, selectedAttributeValueIds }) => {
     const ids = normalizeSelectedAttributeValueIds(selectedAttributeValueIds);
 
-    const product = await prisma.product.findFirst({
-        where: { slug },
-        select: { id: true, slug: true, name: true, imagePath: true, basePrice: true, vat: true },
-    });
+    const product = await ProductPricingModel.findProductBySlugForPricing(slug);
 
     if (!product) return null;
 
@@ -81,10 +72,7 @@ const repairCartPrices = async (cart) => {
     if (!Array.isArray(cart) || !cart.length) return cart;
 
     const slugs = cart.map((i) => i.slug).filter(Boolean);
-    const products = await prisma.product.findMany({
-        where: { slug: { in: slugs } },
-        select: { id: true, slug: true, basePrice: true, vat: true, imagePath: true, name: true },
-    });
+    const products = await ProductPricingModel.findProductsBySlugsForCart(slugs);
     const bySlug = new Map(products.map((p) => [p.slug, p]));
 
     const allSelectedIds = cart
@@ -93,10 +81,7 @@ const repairCartPrices = async (cart) => {
     const uniqueSelectedIds = Array.from(new Set(allSelectedIds));
 
     const selectedRows = uniqueSelectedIds.length
-        ? await prisma.productAttributeValue.findMany({
-            where: { id: { in: uniqueSelectedIds } },
-            include: { attribute: true },
-        })
+        ? await ProductPricingModel.findAttributeValuesByIdsWithAttribute(uniqueSelectedIds)
         : [];
     const selectedById = new Map(selectedRows.map((r) => [r.id, r]));
 
@@ -147,10 +132,7 @@ const priceCartForOrder = async (cart) => {
     if (!Array.isArray(cart) || !cart.length) return { ok: true, items: [] };
 
     const slugs = cart.map((i) => i.slug).filter(Boolean);
-    const products = await prisma.product.findMany({
-        where: { slug: { in: slugs } },
-        select: { id: true, slug: true, basePrice: true, vat: true },
-    });
+    const products = await ProductPricingModel.findProductsBySlugsForCart(slugs);
     const bySlug = new Map(products.map((p) => [p.slug, p]));
 
     const allSelectedIds = cart
@@ -159,10 +141,7 @@ const priceCartForOrder = async (cart) => {
     const uniqueSelectedIds = Array.from(new Set(allSelectedIds));
 
     const selectedRows = uniqueSelectedIds.length
-        ? await prisma.productAttributeValue.findMany({
-            where: { id: { in: uniqueSelectedIds } },
-            include: { attribute: true },
-        })
+        ? await ProductPricingModel.findAttributeValuesByIdsWithAttribute(uniqueSelectedIds)
         : [];
     const selectedById = new Map(selectedRows.map((r) => [r.id, r]));
 
