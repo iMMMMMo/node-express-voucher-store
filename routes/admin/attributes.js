@@ -1,16 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const prisma = require("../../prisma/prismaClient");
+const ProductAttributeModel = require("../../models/productAttributeModel");
 const { body, param, validationResult } = require("express-validator");
 const { parseIntSafe } = require("../../utils/number");
 const { normalizeText } = require("../../utils/text");
 
 router.get("/", async (req, res) => {
   try {
-    const attributes = await prisma.productAttribute.findMany({
-      orderBy: { id: "asc" },
-      include: { _count: { select: { values: true } } },
-    });
+    const attributes = await ProductAttributeModel.findAllWithValuesCount();
 
     res.render("admin/layout", {
       title: "Admin | Attributes",
@@ -67,11 +64,7 @@ router.post(
     }
 
     try {
-      await prisma.productAttribute.create({
-        data: {
-          name: normalizeText(req.body.name),
-        },
-      });
+      await ProductAttributeModel.create({ name: normalizeText(req.body.name) });
 
       return res.redirect("/admin/attributes");
     } catch (error) {
@@ -101,10 +94,7 @@ router.get(
 
     const id = parseIntSafe(req.params.id);
     try {
-      const attribute = await prisma.productAttribute.findUnique({
-        where: { id },
-        include: { _count: { select: { values: true } } },
-      });
+      const attribute = await ProductAttributeModel.findByIdWithValuesCount(id);
       if (!attribute) {
         return res.redirect("/admin/attributes");
       }
@@ -139,7 +129,7 @@ router.post(
 
     if (!id || !errors.isEmpty()) {
       const attribute = id
-        ? await prisma.productAttribute.findUnique({ where: { id }, include: { _count: { select: { values: true } } } }).catch(() => null)
+        ? await ProductAttributeModel.findByIdWithValuesCount(id).catch(() => null)
         : null;
       return res.status(400).render("admin/layout", {
         title: "Admin | Edit attribute",
@@ -154,15 +144,12 @@ router.post(
     }
 
     try {
-      await prisma.productAttribute.update({
-        where: { id },
-        data: { name: normalizeText(req.body.name) },
-      });
+      await ProductAttributeModel.update(id, { name: normalizeText(req.body.name) });
 
       return res.redirect("/admin/attributes");
     } catch (error) {
       console.error("Error updating attribute:", error);
-      const attribute = await prisma.productAttribute.findUnique({ where: { id }, include: { _count: { select: { values: true } } } }).catch(() => null);
+      const attribute = await ProductAttributeModel.findByIdWithValuesCount(id).catch(() => null);
       return res.status(500).render("admin/layout", {
         title: "Admin | Edit attribute",
         viewFile: "../admin/attributes/form",
@@ -190,17 +177,11 @@ router.post(
     if (!id) return res.redirect("/admin/attributes");
 
     try {
-      const attribute = await prisma.productAttribute.findUnique({
-        where: { id },
-        include: { _count: { select: { values: true } } },
-      });
+      const attribute = await ProductAttributeModel.findByIdWithValuesCount(id);
       if (!attribute) return res.redirect("/admin/attributes");
 
       if ((attribute._count?.values || 0) > 0) {
-        const attributes = await prisma.productAttribute.findMany({
-          orderBy: { id: "asc" },
-          include: { _count: { select: { values: true } } },
-        });
+        const attributes = await ProductAttributeModel.findAllWithValuesCount();
         return res.status(400).render("admin/layout", {
           title: "Admin | Attributes",
           viewFile: "../admin/attributes/index",
@@ -211,7 +192,7 @@ router.post(
         });
       }
 
-      await prisma.productAttribute.delete({ where: { id } });
+      await ProductAttributeModel.delete(id);
       return res.redirect("/admin/attributes");
     } catch (error) {
       console.error("Error deleting attribute:", error);
