@@ -2,6 +2,32 @@ const prisma = require("../prisma/prismaClient");
 const { Prisma } = require("@prisma/client");
 
 const OrderModel = {
+  findAllForAdminWithUserAndItemsCount: async () => {
+    return await prisma.order.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: { select: { id: true, email: true, name: true } },
+        _count: { select: { items: true } },
+      },
+    });
+  },
+
+  findByIdForAdminWithDetails: async (id) => {
+    if (!id) return null;
+
+    return await prisma.order.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, email: true, name: true } },
+        deliveryAddress: true,
+        items: {
+          include: { product: { select: { id: true, name: true, slug: true } } },
+          orderBy: { id: "asc" },
+        },
+      },
+    });
+  },
+
   findAllForUserWithItemsCount: async (userId) => {
     if (!userId) return [];
 

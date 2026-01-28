@@ -1,18 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const prisma = require("../../prisma/prismaClient");
+const OrderModel = require("../../models/orderModel");
 const { param, validationResult } = require("express-validator");
 const { decimalToNumber } = require("../../utils/number");
 
 router.get("/", async (req, res) => {
   try {
-    const orders = await prisma.order.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: { select: { id: true, email: true, name: true } },
-        _count: { select: { items: true } },
-      },
-    });
+    const orders = await OrderModel.findAllForAdminWithUserAndItemsCount();
 
     return res.render("admin/layout", {
       title: "Admin | Orders",
@@ -71,17 +65,7 @@ router.get(
     const orderId = Number.parseInt(req.params.id, 10);
 
     try {
-      const order = await prisma.order.findUnique({
-        where: { id: orderId },
-        include: {
-          user: { select: { id: true, email: true, name: true } },
-          deliveryAddress: true,
-          items: {
-            include: { product: { select: { id: true, name: true, slug: true } } },
-            orderBy: { id: "asc" },
-          },
-        },
-      });
+      const order = await OrderModel.findByIdForAdminWithDetails(orderId);
 
       if (!order) {
         return res.status(404).render("admin/layout", {
