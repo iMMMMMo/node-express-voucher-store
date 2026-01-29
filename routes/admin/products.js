@@ -203,15 +203,13 @@ router.post(
       const basePrice = parseMoney(req.body.basePrice);
       const vat = parseMoney(req.body.vat);
 
-      await prisma.product.create({
-        data: {
-          name: normalizeText(req.body.name, { maxLen: 160 }),
-          slug: normalizeText(req.body.slug, { maxLen: 160 }),
-          description: normalizeText(req.body.description, { maxLen: 5000 }),
-          basePrice: new Prisma.Decimal(basePrice.toFixed(2)),
-          vat: new Prisma.Decimal(vat.toFixed(2)),
-          imagePath,
-        },
+      await ProductModel.create({
+        name: normalizeText(req.body.name, { maxLen: 160 }),
+        slug: normalizeText(req.body.slug, { maxLen: 160 }),
+        description: normalizeText(req.body.description, { maxLen: 5000 }),
+        basePrice,
+        vat,
+        imagePath,
       });
 
       return res.redirect("/admin/products");
@@ -246,10 +244,7 @@ router.get(
 
     const id = parseIntSafe(req.params.id);
     try {
-      const product = await prisma.product.findUnique({
-        where: { id },
-        include: { _count: { select: { attributes: true, orderItems: true } } },
-      });
+      const product = await ProductModel.findByIdWithAdminCounts(id);
       if (!product) return res.redirect("/admin/products");
 
       return res.render("admin/layout", {
@@ -354,9 +349,7 @@ router.post(
     };
 
     const product = id
-      ? await prisma.product
-          .findUnique({ where: { id }, include: { _count: { select: { attributes: true, orderItems: true } } } })
-          .catch(() => null)
+      ? await ProductModel.findByIdWithAdminCounts(id).catch(() => null)
       : null;
 
     if (!product) {
@@ -393,16 +386,13 @@ router.post(
       const basePrice = parseMoney(req.body.basePrice);
       const vat = parseMoney(req.body.vat);
 
-      await prisma.product.update({
-        where: { id },
-        data: {
-          name: normalizeText(req.body.name, { maxLen: 160 }),
-          slug: normalizeText(req.body.slug, { maxLen: 160 }),
-          description: normalizeText(req.body.description, { maxLen: 5000 }),
-          basePrice: new Prisma.Decimal(basePrice.toFixed(2)),
-          vat: new Prisma.Decimal(vat.toFixed(2)),
-          imagePath,
-        },
+      await ProductModel.update(id, {
+        name: normalizeText(req.body.name, { maxLen: 160 }),
+        slug: normalizeText(req.body.slug, { maxLen: 160 }),
+        description: normalizeText(req.body.description, { maxLen: 5000 }),
+        basePrice,
+        vat,
+        imagePath,
       });
 
       return res.redirect("/admin/products");
@@ -437,10 +427,7 @@ router.post(
     if (!id) return res.redirect("/admin/products");
 
     try {
-      const product = await prisma.product.findUnique({
-        where: { id },
-        include: { _count: { select: { attributes: true, orderItems: true } } },
-      });
+      const product = await ProductModel.findByIdWithAdminCounts(id);
       if (!product) return res.redirect("/admin/products");
 
       const attrsCount = product._count?.attributes || 0;
@@ -457,7 +444,7 @@ router.post(
         });
       }
 
-      await prisma.product.delete({ where: { id } });
+      await ProductModel.delete(id);
       return res.redirect("/admin/products");
     } catch (error) {
       console.error("Error deleting product:", error);

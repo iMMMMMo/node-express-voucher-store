@@ -1,5 +1,6 @@
 const prisma = require("../prisma/prismaClient");
 const { toNumber } = require("../utils/number");
+const { Prisma } = require("@prisma/client");
 
 const ProductModel = {
     findAll: async () => {
@@ -14,6 +15,51 @@ const ProductModel = {
             VAT: toNumber(p.vat),
             finalPrice: (toNumber(p.basePrice) ?? 0) * (1 + ((toNumber(p.vat) ?? 0) / 100))
         }));
+    },
+
+    findByIdWithAdminCounts: async (id) => {
+        if (!id) return null;
+
+        return await prisma.product.findUnique({
+            where: { id },
+            include: { _count: { select: { attributes: true, orderItems: true } } }
+        });
+    },
+
+    create: async ({ name, slug, description = null, basePrice = 0, vat = 0, imagePath = null }) => {
+        return await prisma.product.create({
+            data: {
+                name,
+                slug,
+                description,
+                basePrice: new Prisma.Decimal(Number(basePrice || 0).toFixed(2)),
+                vat: new Prisma.Decimal(Number(vat || 0).toFixed(2)),
+                imagePath,
+            },
+            select: { id: true }
+        });
+    },
+
+    update: async (id, { name, slug, description = null, basePrice = 0, vat = 0, imagePath = null }) => {
+        return await prisma.product.update({
+            where: { id },
+            data: {
+                name,
+                slug,
+                description,
+                basePrice: new Prisma.Decimal(Number(basePrice || 0).toFixed(2)),
+                vat: new Prisma.Decimal(Number(vat || 0).toFixed(2)),
+                imagePath,
+            },
+            select: { id: true }
+        });
+    },
+
+    delete: async (id) => {
+        return await prisma.product.delete({
+            where: { id },
+            select: { id: true }
+        });
     },
 
     findProduct: async ({ id = null, slug = null }) => {
