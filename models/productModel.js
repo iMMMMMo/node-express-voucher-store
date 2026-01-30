@@ -26,6 +26,20 @@ const ProductModel = {
         });
     },
 
+    findByIdWithAttributesForAdmin: async (id) => {
+        if (!id) return null;
+
+        return await prisma.product.findUnique({
+            where: { id },
+            include: {
+                attributes: {
+                    include: { attribute: true },
+                    orderBy: [{ attributeId: 'asc' }, { id: 'asc' }],
+                },
+            },
+        });
+    },
+
     create: async ({ name, slug, description = null, basePrice = 0, vat = 0, imagePath = null }) => {
         return await prisma.product.create({
             data: {

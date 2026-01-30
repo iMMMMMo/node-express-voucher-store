@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const ProductModel = require("../../models/productModel");
-const prisma = require("../../prisma/prismaClient");
-const { Prisma } = require("@prisma/client");
+const ProductAttributeModel = require("../../models/productAttributeModel");
+const ProductAttributeValueModel = require("../../models/productAttributeValueModel");
 const { body, param, validationResult } = require("express-validator");
 const multer = require("multer");
 const path = require("path");
@@ -277,20 +277,9 @@ router.get("/:id/attributes", async (req, res) => {
   if (!id) return res.redirect("/admin/products");
 
   try {
-    const allAttributes = await prisma.productAttribute.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    });
+    const allAttributes = await ProductAttributeModel.findAllForSelect();
 
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        attributes: {
-          include: { attribute: true },
-          orderBy: [{ attributeId: "asc" }, { id: "asc" }],
-        },
-      },
-    });
+    const product = await ProductModel.findByIdWithAttributesForAdmin(id);
 
     if (!product) return res.redirect("/admin/products");
 
@@ -458,25 +447,16 @@ router.post("/:id/attributes", async (req, res) => {
   if (!id) return res.redirect("/admin/products");
 
   try {
-    const allAttributes = await prisma.productAttribute.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    });
+    const allAttributes = await ProductAttributeModel.findAllForSelect();
     const attributeIds = new Set(allAttributes.map((a) => a.id));
 
-    const product = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        attributes: {
-          include: { attribute: true },
-          orderBy: [{ attributeId: "asc" }, { id: "asc" }],
-        },
-      },
-    });
+    const product = await ProductModel.findByIdWithAttributesForAdmin(id);
     if (!product) return res.redirect("/admin/products");
 
     const errors = [];
-    const ops = [];
+    const deletes = [];
+    const updates = [];
+    const creates = [];
 
     const normalizeArray = (value) => {
       if (Array.isArray(value)) return value;
@@ -489,11 +469,7 @@ router.post("/:id/attributes", async (req, res) => {
       const del = req.body[`row_${rowId}_delete`];
 
       if (del) {
-        ops.push(
-          prisma.productAttributeValue.delete({
-            where: { id: rowId },
-          })
-        );
+        deletes.push(rowId);
         continue;
       }
 
@@ -517,16 +493,12 @@ router.post("/:id/attributes", async (req, res) => {
 
       if (rowHasError) continue;
 
-      ops.push(
-        prisma.productAttributeValue.update({
-          where: { id: rowId },
-          data: {
-            attributeId,
-            value: value.slice(0, 255),
-            priceDelta: new Prisma.Decimal(delta.toFixed(2)),
-          },
-        })
-      );
+      updates.push({
+        id: rowId,
+        attributeId,
+        value: value.slice(0, 255),
+        priceDelta: delta,
+      });
     }
 
     const newAttrIds = normalizeArray(req.body["new_attributeId"]);
@@ -558,16 +530,11 @@ router.post("/:id/attributes", async (req, res) => {
 
       if (newRowHasError) continue;
 
-      ops.push(
-        prisma.productAttributeValue.create({
-          data: {
-            productId: id,
-            attributeId,
-            value: value.slice(0, 255),
-            priceDelta: new Prisma.Decimal(delta.toFixed(2)),
-          },
-        })
-      );
+      creates.push({
+        attributeId,
+        value: value.slice(0, 255),
+        priceDelta: delta,
+      });
     }
 
     if (errors.length) {
@@ -584,8 +551,12 @@ router.post("/:id/attributes", async (req, res) => {
       });
     }
 
-    if (ops.length) {
-      await prisma.$transaction(ops);
+    if (deletes.length || updates.length || creates.length) {
+      await ProductAttributeValueModel.applyChangesForProduct(id, {
+        deletes,
+        updates,
+        creates,
+      });
     }
 
     return res.redirect(`/admin/products/${id}/attributes?saved=1`);
