@@ -176,13 +176,19 @@ router.get(
       const product = await ProductModel.findByIdWithAdminCounts(id);
       if (!product) return res.redirect("/admin/products");
 
+      const availableImages = productImages.listAvailableImages();
+      const currentBase = product.imagePath ? String(product.imagePath).split("/").filter(Boolean).pop() : "";
+      const existingImage = currentBase && availableImages.some((img) => String(img.name) === String(currentBase))
+        ? currentBase
+        : "";
+
       return res.render("admin/layout", {
         title: "Admin | Edit product",
         viewFile: "../admin/products/form",
         viewData: {
           mode: "edit",
           errors: null,
-          availableImages: productImages.listAvailableImages(),
+          availableImages,
           product,
           formData: {
             name: product.name || "",
@@ -190,7 +196,7 @@ router.get(
             description: product.description || "",
             basePrice: product.basePrice ? product.basePrice.toString() : "0.00",
             vat: product.vat ? product.vat.toString() : "0.00",
-            existingImage: "",
+            existingImage,
           },
         },
       });
