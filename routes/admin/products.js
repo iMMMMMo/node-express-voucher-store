@@ -4,82 +4,15 @@ const ProductModel = require("../../models/productModel");
 const ProductAttributeModel = require("../../models/productAttributeModel");
 const ProductAttributeValueModel = require("../../models/productAttributeValueModel");
 const { body, param, validationResult } = require("express-validator");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const sharp = require("sharp");
+const AdminImageService = require("../../services/adminImageService");
 const { parseIntSafe } = require("../../utils/number");
 const { normalizeText } = require("../../utils/text");
 
-const uploadDir = path.join(__dirname, "..", "..", "public", "images", "products");
-fs.mkdirSync(uploadDir, { recursive: true });
-
-const listAvailableImages = () => {
-  const allowedExt = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"]);
-  try {
-    return fs
-      .readdirSync(uploadDir, { withFileTypes: true })
-      .filter((entry) => entry.isFile())
-      .map((entry) => entry.name)
-      .filter((name) => allowedExt.has(path.extname(name).toLowerCase()))
-      .sort((a, b) => a.localeCompare(b))
-      .map((name) => ({
-        name,
-        webPath: `/images/products/${name}`,
-      }));
-  } catch {
-    return [];
-  }
-};
-
-const resolveExistingImageSelection = (value) => {
-  const selected = (value ?? "").toString().trim();
-  if (!selected) return null;
-
-  const base = path.basename(selected);
-  if (base !== selected) return null;
-
-  const available = listAvailableImages();
-  const match = available.find((img) => img.name === base);
-  return match ? match.webPath : null;
-};
-
-const normalizeUploadedImage = async (absolutePath) => {
-  const ext = path.extname(absolutePath).toLowerCase();
-  const tmpPath = `${absolutePath}.tmp`;
-
-  if (![".jpg", ".jpeg", ".png", ".webp"].includes(ext)) return;
-
-  let pipeline = sharp(absolutePath).rotate().resize(800, 800, { fit: "cover" });
-
-  if (ext === ".png") pipeline = pipeline.png({ compressionLevel: 9 });
-  else if (ext === ".webp") pipeline = pipeline.webp({ quality: 82 });
-  else pipeline = pipeline.jpeg({ quality: 82, mozjpeg: true });
-
-  await pipeline.toFile(tmpPath);
-  await fs.promises.rename(tmpPath, absolutePath);
-};
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || "");
-    const safeExt = ext && ext.length <= 10 ? ext.toLowerCase() : "";
-    const name = `product-${Date.now()}-${Math.round(Math.random() * 1e9)}${safeExt}`;
-    cb(null, name);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
-    if (!allowed.has(file.mimetype)) {
-      return cb(new Error("Only image files are allowed."));
-    }
-    return cb(null, true);
-  },
+const productImages = AdminImageService.createForAdminCategory(__dirname, {
+  category: "products",
+  filenamePrefix: "product",
+  resize: { width: 800, height: 800 },
+  maxFileSizeBytes: 5 * 1024 * 1024,
 });
 
 router.get("/", async (req, res) => {
@@ -128,7 +61,7 @@ router.get("/new", (req, res) => {
     viewData: {
       mode: "create",
       errors: null,
-      availableImages: listAvailableImages(),
+      availableImages: productImages.listAvailableImages(),
       product: null,
       formData: {
         name: "",
@@ -144,7 +77,7 @@ router.get("/new", (req, res) => {
 
 router.post(
   "/",
-  upload.single("image"),
+  productImages.uploadSingle("image"),
   [
     body("name").trim().isLength({ min: 1, max: 160 }).withMessage("Name is required."),
     body("slug")
@@ -177,16 +110,14 @@ router.post(
     };
 
     if (!errors.isEmpty()) {
-      if (req.file?.path) {
-        fs.promises.unlink(req.file.path).catch(() => {});
-      }
+      productImages.safeUnlink(req.file?.path);
       return res.status(400).render("admin/layout", {
         title: "Admin | New product",
         viewFile: "../admin/products/form",
         viewData: {
           mode: "create",
           errors: errors.array(),
-          availableImages: listAvailableImages(),
+          availableImages: productImages.listAvailableImages(),
           product: null,
           formData,
         },
@@ -194,10 +125,10 @@ router.post(
     }
 
     try {
-      let imagePath = resolveExistingImageSelection(req.body.existingImage);
+      let imagePath = productImages.resolveExistingImageSelection(req.body.existingImage);
       if (req.file) {
-        await normalizeUploadedImage(req.file.path);
-        imagePath = `/images/products/${req.file.filename}`;
+        await productImages.normalizeUploadedImage(req.file.path);
+        imagePath = productImages.webPathForFilename(req.file.filename);
       }
 
       const basePrice = parseMoney(req.body.basePrice);
@@ -214,9 +145,7 @@ router.post(
 
       return res.redirect("/admin/products");
     } catch (error) {
-      if (req.file?.path) {
-        fs.promises.unlink(req.file.path).catch(() => {});
-      }
+      productImages.safeUnlink(req.file?.path);
       const uniqueMessage = handleUniqueSlugError(error);
       const serverErrors = uniqueMessage ? [{ msg: uniqueMessage }] : [{ msg: "Could not create product." }];
       console.error("Error creating product:", error);
@@ -226,7 +155,7 @@ router.post(
         viewData: {
           mode: "create",
           errors: serverErrors,
-          availableImages: listAvailableImages(),
+          availableImages: productImages.listAvailableImages(),
           product: null,
           formData,
         },
@@ -253,7 +182,7 @@ router.get(
         viewData: {
           mode: "edit",
           errors: null,
-          availableImages: listAvailableImages(),
+          availableImages: productImages.listAvailableImages(),
           product,
           formData: {
             name: product.name || "",
@@ -302,7 +231,7 @@ router.get("/:id/attributes", async (req, res) => {
 
 router.post(
   "/:id",
-  upload.single("image"),
+  productImages.uploadSingle("image"),
   [
     param("id").isInt({ min: 1 }).withMessage("Invalid product id."),
     body("name").trim().isLength({ min: 1, max: 160 }).withMessage("Name is required."),
@@ -342,19 +271,19 @@ router.post(
       : null;
 
     if (!product) {
-      if (req.file?.path) fs.promises.unlink(req.file.path).catch(() => {});
+      productImages.safeUnlink(req.file?.path);
       return res.redirect("/admin/products");
     }
 
     if (!errors.isEmpty()) {
-      if (req.file?.path) fs.promises.unlink(req.file.path).catch(() => {});
+      productImages.safeUnlink(req.file?.path);
       return res.status(400).render("admin/layout", {
         title: "Admin | Edit product",
         viewFile: "../admin/products/form",
         viewData: {
           mode: "edit",
           errors: errors.array(),
-          availableImages: listAvailableImages(),
+          availableImages: productImages.listAvailableImages(),
           product,
           formData,
         },
@@ -363,13 +292,13 @@ router.post(
 
     try {
       let imagePath = product.imagePath || null;
-      const selected = resolveExistingImageSelection(req.body.existingImage);
+      const selected = productImages.resolveExistingImageSelection(req.body.existingImage);
       if (typeof req.body.existingImage !== "undefined") {
         imagePath = selected;
       }
       if (req.file) {
-        await normalizeUploadedImage(req.file.path);
-        imagePath = `/images/products/${req.file.filename}`;
+        await productImages.normalizeUploadedImage(req.file.path);
+        imagePath = productImages.webPathForFilename(req.file.filename);
       }
 
       const basePrice = parseMoney(req.body.basePrice);
@@ -386,7 +315,7 @@ router.post(
 
       return res.redirect("/admin/products");
     } catch (error) {
-      if (req.file?.path) fs.promises.unlink(req.file.path).catch(() => {});
+      productImages.safeUnlink(req.file?.path);
       const uniqueMessage = handleUniqueSlugError(error);
       const serverErrors = uniqueMessage ? [{ msg: uniqueMessage }] : [{ msg: "Could not update product." }];
       console.error("Error updating product:", error);
@@ -396,7 +325,7 @@ router.post(
         viewData: {
           mode: "edit",
           errors: serverErrors,
-          availableImages: listAvailableImages(),
+          availableImages: productImages.listAvailableImages(),
           product,
           formData,
         },

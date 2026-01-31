@@ -2,82 +2,15 @@ const express = require("express");
 const router = express.Router();
 const BannerModel = require("../../models/bannerModel");
 const { body, param, validationResult } = require("express-validator");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const sharp = require("sharp");
+const AdminImageService = require("../../services/adminImageService");
 const { parseIntSafe } = require("../../utils/number");
 const { normalizeText } = require("../../utils/text");
 
-const uploadDir = path.join(__dirname, "..", "..", "public", "images", "banners");
-fs.mkdirSync(uploadDir, { recursive: true });
-
-const listAvailableImages = () => {
-  const allowedExt = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"]);
-  try {
-    return fs
-      .readdirSync(uploadDir, { withFileTypes: true })
-      .filter((entry) => entry.isFile())
-      .map((entry) => entry.name)
-      .filter((name) => allowedExt.has(path.extname(name).toLowerCase()))
-      .sort((a, b) => a.localeCompare(b))
-      .map((name) => ({
-        name,
-        webPath: `/images/banners/${name}`,
-      }));
-  } catch {
-    return [];
-  }
-};
-
-const resolveExistingImageSelection = (value) => {
-  const selected = (value ?? "").toString().trim();
-  if (!selected) return null;
-
-  const base = path.basename(selected);
-  if (base !== selected) return null;
-
-  const available = listAvailableImages();
-  const match = available.find((img) => img.name === base);
-  return match ? match.webPath : null;
-};
-
-const normalizeUploadedImage = async (absolutePath) => {
-  const ext = path.extname(absolutePath).toLowerCase();
-  const tmpPath = `${absolutePath}.tmp`;
-
-  if (![".jpg", ".jpeg", ".png", ".webp"].includes(ext)) return;
-
-  let pipeline = sharp(absolutePath).rotate().resize(2560, 1200, { fit: "cover" });
-
-  if (ext === ".png") pipeline = pipeline.png({ compressionLevel: 9 });
-  else if (ext === ".webp") pipeline = pipeline.webp({ quality: 82 });
-  else pipeline = pipeline.jpeg({ quality: 82, mozjpeg: true });
-
-  await pipeline.toFile(tmpPath);
-  await fs.promises.rename(tmpPath, absolutePath);
-};
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || "");
-    const safeExt = ext && ext.length <= 10 ? ext.toLowerCase() : "";
-    const name = `banner-${Date.now()}-${Math.round(Math.random() * 1e9)}${safeExt}`;
-    cb(null, name);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 8 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
-    if (!allowed.has(file.mimetype)) {
-      return cb(new Error("Only image files are allowed."));
-    }
-    return cb(null, true);
-  },
+const bannerImages = AdminImageService.createForAdminCategory(__dirname, {
+  category: "banners",
+  filenamePrefix: "banner",
+  resize: { width: 2560, height: 1200 },
+  maxFileSizeBytes: 8 * 1024 * 1024,
 });
 
 const parseOrder = (value) => {
@@ -116,7 +49,7 @@ router.get("/new", (req, res) => {
       mode: "create",
       banner: null,
       errors: null,
-      availableImages: listAvailableImages(),
+      availableImages: bannerImages.listAvailableImages(),
       formData: {
         caption: "",
         content: "",
@@ -132,7 +65,7 @@ router.get("/new", (req, res) => {
 
 router.post(
   "/",
-  upload.single("image"),
+  bannerImages.uploadSingle("image"),
   [
     body("caption").optional({ nullable: true }).trim().isLength({ max: 200 }).withMessage("Caption max length is 200."),
     body("content").optional({ nullable: true }).trim().isLength({ max: 5000 }).withMessage("Content max length is 5000."),
@@ -154,9 +87,7 @@ router.post(
     };
 
     if (!errors.isEmpty()) {
-      if (req.file?.path) {
-        fs.promises.unlink(req.file.path).catch(() => {});
-      }
+      bannerImages.safeUnlink(req.file?.path);
       return res.status(400).render("admin/layout", {
         title: "Admin | New banner",
         viewFile: "../admin/banners/form",
@@ -164,17 +95,17 @@ router.post(
           mode: "create",
           banner: null,
           errors: errors.array(),
-          availableImages: listAvailableImages(),
+          availableImages: bannerImages.listAvailableImages(),
           formData,
         },
       });
     }
 
     try {
-      let imagePath = resolveExistingImageSelection(req.body.existingImage);
+      let imagePath = bannerImages.resolveExistingImageSelection(req.body.existingImage);
       if (req.file) {
-        await normalizeUploadedImage(req.file.path);
-        imagePath = `/images/banners/${req.file.filename}`;
+        await bannerImages.normalizeUploadedImage(req.file.path);
+        imagePath = bannerImages.webPathForFilename(req.file.filename);
       }
 
       await BannerModel.create({
@@ -190,9 +121,7 @@ router.post(
 
       return res.redirect("/admin/banners");
     } catch (error) {
-      if (req.file?.path) {
-        fs.promises.unlink(req.file.path).catch(() => {});
-      }
+      bannerImages.safeUnlink(req.file?.path);
       console.error("Error creating banner:", error);
       return res.status(500).render("admin/layout", {
         title: "Admin | New banner",
@@ -201,7 +130,7 @@ router.post(
           mode: "create",
           banner: null,
           errors: [{ msg: "Could not create banner." }],
-          availableImages: listAvailableImages(),
+          availableImages: bannerImages.listAvailableImages(),
           formData,
         },
       });
@@ -228,7 +157,7 @@ router.get(
           mode: "edit",
           banner,
           errors: null,
-          availableImages: listAvailableImages(),
+          availableImages: bannerImages.listAvailableImages(),
           formData: {
             caption: banner.caption || "",
             content: banner.content || "",
@@ -249,7 +178,7 @@ router.get(
 
 router.post(
   "/:id",
-  upload.single("image"),
+  bannerImages.uploadSingle("image"),
   [
     param("id").isInt({ min: 1 }).withMessage("Invalid banner id."),
     body("caption").optional({ nullable: true }).trim().isLength({ max: 200 }).withMessage("Caption max length is 200."),
@@ -263,7 +192,7 @@ router.post(
 
     const banner = await BannerModel.findByIdForUser(id, req.session.userId);
     if (!banner) {
-      if (req.file?.path) fs.promises.unlink(req.file.path).catch(() => {});
+      bannerImages.safeUnlink(req.file?.path);
       return res.redirect("/admin/banners");
     }
 
@@ -278,7 +207,7 @@ router.post(
     };
 
     if (!errors.isEmpty()) {
-      if (req.file?.path) fs.promises.unlink(req.file.path).catch(() => {});
+      bannerImages.safeUnlink(req.file?.path);
       return res.status(400).render("admin/layout", {
         title: "Admin | Edit banner",
         viewFile: "../admin/banners/form",
@@ -286,7 +215,7 @@ router.post(
           mode: "edit",
           banner,
           errors: errors.array(),
-          availableImages: listAvailableImages(),
+          availableImages: bannerImages.listAvailableImages(),
           formData,
         },
       });
@@ -295,14 +224,14 @@ router.post(
     try {
       let imagePath = banner.imagePath || null;
 
-      const selectedExisting = resolveExistingImageSelection(req.body.existingImage);
+      const selectedExisting = bannerImages.resolveExistingImageSelection(req.body.existingImage);
       if (selectedExisting) {
         imagePath = selectedExisting;
       }
 
       if (req.file) {
-        await normalizeUploadedImage(req.file.path);
-        imagePath = `/images/banners/${req.file.filename}`;
+        await bannerImages.normalizeUploadedImage(req.file.path);
+        imagePath = bannerImages.webPathForFilename(req.file.filename);
       }
 
       await BannerModel.update(id, {
@@ -318,7 +247,7 @@ router.post(
 
       return res.redirect("/admin/banners");
     } catch (error) {
-      if (req.file?.path) fs.promises.unlink(req.file.path).catch(() => {});
+      bannerImages.safeUnlink(req.file?.path);
       console.error("Error updating banner:", error);
       return res.status(500).render("admin/layout", {
         title: "Admin | Edit banner",
@@ -327,7 +256,7 @@ router.post(
           mode: "edit",
           banner,
           errors: [{ msg: "Could not update banner." }],
-          availableImages: listAvailableImages(),
+          availableImages: bannerImages.listAvailableImages(),
           formData,
         },
       });

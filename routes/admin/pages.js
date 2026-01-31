@@ -4,80 +4,15 @@ const PageModel = require("../../models/pageModel");
 const { body, param, validationResult } = require("express-validator");
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
-const sharp = require("sharp");
+const AdminImageService = require("../../services/adminImageService");
 const { parseIntSafe } = require("../../utils/number");
 const { normalizeText } = require("../../utils/text");
 
-const uploadDir = path.join(__dirname, "..", "..", "public", "images", "pages");
-fs.mkdirSync(uploadDir, { recursive: true });
-
-const listAvailableImages = () => {
-  const allowedExt = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"]);
-  try {
-    return fs
-      .readdirSync(uploadDir, { withFileTypes: true })
-      .filter((entry) => entry.isFile())
-      .map((entry) => entry.name)
-      .filter((name) => allowedExt.has(path.extname(name).toLowerCase()))
-      .sort((a, b) => a.localeCompare(b))
-      .map((name) => ({
-        name,
-        webPath: `/images/pages/${name}`,
-      }));
-  } catch {
-    return [];
-  }
-};
-
-const resolveExistingImageSelection = (value) => {
-  const selected = (value ?? "").toString().trim();
-  if (!selected) return null;
-
-  const base = path.basename(selected);
-  if (base !== selected) return null;
-
-  const available = listAvailableImages();
-  const match = available.find((img) => img.name === base);
-  return match ? match.webPath : null;
-};
-
-const normalizeUploadedImage = async (absolutePath) => {
-  const ext = path.extname(absolutePath).toLowerCase();
-  const tmpPath = `${absolutePath}.tmp`;
-
-  if (![".jpg", ".jpeg", ".png", ".webp"].includes(ext)) return;
-
-  let pipeline = sharp(absolutePath).rotate().resize(800, 450, { fit: "cover" });
-
-  if (ext === ".png") pipeline = pipeline.png({ compressionLevel: 9 });
-  else if (ext === ".webp") pipeline = pipeline.webp({ quality: 82 });
-  else pipeline = pipeline.jpeg({ quality: 82, mozjpeg: true });
-
-  await pipeline.toFile(tmpPath);
-  await fs.promises.rename(tmpPath, absolutePath);
-};
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || "");
-    const safeExt = ext && ext.length <= 10 ? ext.toLowerCase() : "";
-    const name = `page-${Date.now()}-${Math.round(Math.random() * 1e9)}${safeExt}`;
-    cb(null, name);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
-    if (!allowed.has(file.mimetype)) {
-      return cb(new Error("Only image files are allowed."));
-    }
-    return cb(null, true);
-  },
+const pageImages = AdminImageService.createForAdminCategory(__dirname, {
+  category: "pages",
+  filenamePrefix: "page",
+  resize: { width: 800, height: 450 },
+  maxFileSizeBytes: 5 * 1024 * 1024,
 });
 
 const handleUniqueUrlError = (error) => {
@@ -120,7 +55,7 @@ router.get("/new", (req, res) => {
     viewData: {
       mode: "create",
       errors: null,
-      availableImages: listAvailableImages(),
+      availableImages: pageImages.listAvailableImages(),
       formData: {
         title: "",
         url: "",
@@ -133,7 +68,7 @@ router.get("/new", (req, res) => {
 
 router.post(
   "/",
-  upload.single("image"),
+  pageImages.uploadSingle("image"),
   [
     body("title").trim().isLength({ min: 1 }).withMessage("Title is required."),
     body("url")
@@ -160,17 +95,17 @@ router.post(
         viewData: {
           mode: "create",
           errors: errors.array(),
-          availableImages: listAvailableImages(),
+          availableImages: pageImages.listAvailableImages(),
           formData,
         },
       });
     }
 
     try {
-      let imagePath = resolveExistingImageSelection(req.body.existingImage);
+      let imagePath = pageImages.resolveExistingImageSelection(req.body.existingImage);
       if (req.file) {
-        await normalizeUploadedImage(req.file.path);
-        imagePath = `/images/pages/${req.file.filename}`;
+        await pageImages.normalizeUploadedImage(req.file.path);
+        imagePath = pageImages.webPathForFilename(req.file.filename);
       }
 
       await PageModel.create({
@@ -183,9 +118,7 @@ router.post(
 
       return res.redirect("/admin/pages");
     } catch (error) {
-      if (req.file?.path) {
-        fs.promises.unlink(req.file.path).catch(() => {});
-      }
+      pageImages.safeUnlink(req.file?.path);
       const uniqueMessage = handleUniqueUrlError(error);
       const serverErrors = uniqueMessage ? [{ msg: uniqueMessage }] : [{ msg: "Could not create page." }];
 
@@ -196,7 +129,7 @@ router.post(
         viewData: {
           mode: "create",
           errors: serverErrors,
-          availableImages: listAvailableImages(),
+          availableImages: pageImages.listAvailableImages(),
           formData,
         },
       });
@@ -227,7 +160,7 @@ router.get(
           mode: "edit",
           page,
           errors: null,
-          availableImages: listAvailableImages(),
+          availableImages: pageImages.listAvailableImages(),
           formData: {
             title: page.title,
             url: page.url,
@@ -245,7 +178,7 @@ router.get(
 
 router.post(
   "/:id",
-  upload.single("image"),
+  pageImages.uploadSingle("image"),
   [
     param("id").isInt({ min: 1 }).withMessage("Invalid page id."),
     body("title").trim().isLength({ min: 1 }).withMessage("Title is required."),
@@ -283,7 +216,7 @@ router.post(
           mode: "edit",
           page: existingPage || { id },
           errors: errors.array(),
-          availableImages: listAvailableImages(),
+          availableImages: pageImages.listAvailableImages(),
           formData,
         },
       });
@@ -296,14 +229,14 @@ router.post(
 
       let imagePath;
       if (req.file) {
-        await normalizeUploadedImage(req.file.path);
-        imagePath = `/images/pages/${req.file.filename}`;
+        await pageImages.normalizeUploadedImage(req.file.path);
+        imagePath = pageImages.webPathForFilename(req.file.filename);
       } else {
         const rawExisting = (req.body.existingImage ?? "").toString().trim();
         if (rawExisting === "") {
           imagePath = null;
         } else {
-          imagePath = resolveExistingImageSelection(rawExisting) || existingPage.imagePath || null;
+          imagePath = pageImages.resolveExistingImageSelection(rawExisting) || existingPage.imagePath || null;
         }
       }
 
@@ -317,9 +250,7 @@ router.post(
 
       return res.redirect("/admin/pages");
     } catch (error) {
-      if (req.file?.path) {
-        fs.promises.unlink(req.file.path).catch(() => {});
-      }
+      pageImages.safeUnlink(req.file?.path);
       const uniqueMessage = handleUniqueUrlError(error);
       const serverErrors = uniqueMessage ? [{ msg: uniqueMessage }] : [{ msg: "Could not update page." }];
 
@@ -331,7 +262,7 @@ router.post(
           mode: "edit",
           page: { id },
           errors: serverErrors,
-          availableImages: listAvailableImages(),
+          availableImages: pageImages.listAvailableImages(),
           formData,
         },
       });
@@ -392,7 +323,7 @@ router.use((err, req, res, next) => {
       viewData: {
         mode: "create",
         errors: [{ msg: message }],
-        availableImages: listAvailableImages(),
+        availableImages: pageImages.listAvailableImages(),
         formData,
       },
     });
@@ -414,7 +345,7 @@ router.use((err, req, res, next) => {
           mode: "edit",
           page,
           errors: [{ msg: message }],
-          availableImages: listAvailableImages(),
+          availableImages: pageImages.listAvailableImages(),
           formData: {
             title: formData.title || page.title,
             url: formData.url || page.url,
