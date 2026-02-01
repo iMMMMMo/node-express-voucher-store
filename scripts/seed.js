@@ -16,6 +16,7 @@ Optional:
 What it does:
   - Creates a couple of test users (admin + customer) if missing
   - Creates sample products, attributes and attribute values
+  - Creates basic navigation items (Home, Shop)
   - Creates basic pages (About, Contact)
 
 Notes:
@@ -155,6 +156,33 @@ async function ensurePage({ url, title, content, imagePath, userId }) {
   return { page: created, created: true };
 }
 
+async function ensureNavigationItem({ userId, parentId = null, title, url, order = 0, isActive = true }) {
+  const existing = await prisma.navigation.findFirst({
+    where: {
+      parentId,
+      url,
+      isActive: true,
+    },
+    select: { id: true },
+  });
+
+  if (existing) return { id: existing.id, created: false };
+
+  const created = await prisma.navigation.create({
+    data: {
+      userId,
+      parentId,
+      title,
+      url,
+      order,
+      isActive,
+    },
+    select: { id: true },
+  });
+
+  return { id: created.id, created: true };
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
@@ -181,6 +209,22 @@ async function main() {
 
   const durationAttr = await ensureAttribute("Duration");
   const locationAttr = await ensureAttribute("Location");
+
+  await ensureNavigationItem({
+    userId: adminUser.id,
+    title: "Home",
+    url: "/",
+    order: 1,
+    isActive: true,
+  });
+
+  await ensureNavigationItem({
+    userId: adminUser.id,
+    title: "Shop",
+    url: "/shop",
+    order: 2,
+    isActive: true,
+  });
 
   const products = [
     {

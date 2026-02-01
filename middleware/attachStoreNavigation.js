@@ -52,28 +52,8 @@ module.exports = async (req, res, next) => {
 
     res.locals.currentPath = req.path;
 
-    // prefer current admin session (preview), otherwise pick first admin as navigation owner.
-    let navigationOwnerId = null;
-
-    if (req.session?.userRole === "admin" && req.session?.userId) {
-      navigationOwnerId = req.session.userId;
-    } else {
-      const owner = await prisma.user.findFirst({
-        where: { role: "admin" },
-        select: { id: true },
-        orderBy: { id: "asc" },
-      });
-      navigationOwnerId = owner?.id ?? null;
-    }
-
-    if (!navigationOwnerId) {
-      res.locals.navigationTree = [];
-      return next();
-    }
-
     const rows = await prisma.navigation.findMany({
       where: {
-        userId: navigationOwnerId,
         isActive: true,
       },
       select: {
