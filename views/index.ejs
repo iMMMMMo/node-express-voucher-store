@@ -89,37 +89,28 @@
     <div class="site-section site-blocks-2">
       <div class="container">
         <div class="row">
-          <div class="col-sm-6 col-md-6 col-lg-4 mb-4 mb-lg-0" data-aos="fade" data-aos-delay="">
-            <a class="block-2-item" 
-              href="/shop">
-              <figure class="image">
-                <img src="/images/masaz.jpg" alt="Spa & Wellness voucher" class="img-fluid">
-              </figure>
-              <div class="text">
-                <h3>Spa &amp; Wellness</h3>
-              </div>
-            </a>
-          </div>
-          <div class="col-sm-6 col-md-6 col-lg-4 mb-5 mb-lg-0" data-aos="fade" data-aos-delay="100">
-            <a class="block-2-item" href="/shop">
-              <figure class="image">
-                <img src="/images/skok.jpg" alt="Experiences voucher" class="img-fluid">
-              </figure>
-              <div class="text">
-                <h3>Experiences</h3>
-              </div>
-            </a>
-          </div>
-          <div class="col-sm-6 col-md-6 col-lg-4 mb-5 mb-lg-0" data-aos="fade" data-aos-delay="200">
-            <a class="block-2-item" href="/shop">
-              <figure class="image">
-                <img src="/images/kolacja.jpg" alt="Food & Dining voucher" class="img-fluid">
-              </figure>
-              <div class="text">
-                <h3>Food &amp; Dining</h3>
-              </div>
-            </a>
-          </div>
+          <% const newest = (typeof latestProducts !== 'undefined' && Array.isArray(latestProducts)) ? latestProducts : []; %>
+          <% const tiles = newest.slice(0, 3); %>
+
+          <% for (let i = 0; i < 3; i += 1) { %>
+            <% const p = tiles[i]; %>
+            <% const isPlaceholder = !p; %>
+            <% const title = isPlaceholder ? `Voucher ${i + 1}` : (p.name || `Voucher ${i + 1}`); %>
+            <% const href = isPlaceholder ? '/shop' : `/shop/${p.slug}`; %>
+            <% const img = (!isPlaceholder && p.imagePath) ? p.imagePath : '/images/products/product-default.jpg'; %>
+            <% const delay = i * 100; %>
+
+            <div class="col-sm-6 col-md-6 col-lg-4 mb-4 mb-lg-0" data-aos="fade" data-aos-delay="<%= delay %>">
+              <a class="block-2-item" href="<%= href %>">
+                <figure class="image">
+                  <img src="<%= img %>" alt="<%= title %>" class="img-fluid">
+                </figure>
+                <div class="text">
+                  <h3><%= title %></h3>
+                </div>
+              </a>
+            </div>
+          <% } %>
         </div>
       </div>
     </div>

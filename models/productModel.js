@@ -17,6 +17,22 @@ const ProductModel = {
         }));
     },
 
+    findLatestForHomepage: async (limit = 3) => {
+        const take = Math.max(1, Math.min(Number(limit) || 3, 12));
+
+        return await prisma.product.findMany({
+            take,
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                imagePath: true,
+                createdAt: true
+            }
+        });
+    },
+
     findByIdWithAdminCounts: async (id) => {
         if (!id) return null;
 
