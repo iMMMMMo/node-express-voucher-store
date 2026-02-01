@@ -19,6 +19,9 @@
     "prisma": "^7.1.0"
   },
   "scripts": {
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "create-user": "node scripts/create-user.js",
+    "edit-user": "node scripts/edit-user.js",
+    "seed": "node scripts/seed.js"
   }
 }
