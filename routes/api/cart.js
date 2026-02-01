@@ -84,7 +84,7 @@ router.post('/add', asyncHandler(async (req, res) => {
             product_id: product.id,
             name: product.name,
             price: parseFloat(unitFinal),
-            imagePath: product.imagePath || '/images/cloth_1.jpg',
+            imagePath: product.imagePath || '/images/products/product-default.jpg',
             quantity: qty,
             selectedAttributeValueIds: normalizedIds,
             recipients: []

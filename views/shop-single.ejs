@@ -21,7 +21,7 @@
           <div class="row">
             <div class="col-md-6">
               <figure class="voucher-detail-image mb-0">
-                <img src="<%= product.imagePath || '/images/cloth_1.jpg' %>" alt="<%= product.name %>" class="img-fluid">
+                <img src="<%= product.imagePath || '/images/products/product-default.jpg' %>" alt="<%= product.name %>" class="img-fluid">
               </figure>
             </div>
             <div class="col-md-6">
@@ -77,7 +77,7 @@
                   data-slug="<%= product.slug %>"
                   data-name="<%= product.name %>"
                   data-price="<%= parseFloat(product.finalPrice).toFixed(2) %>"
-                  data-image="<%= product.imagePath || '/images/cloth_1.jpg' %>">
+                  data-image="<%= product.imagePath || '/images/products/product-default.jpg' %>">
                   Add to cart
                 </button>
               </p>

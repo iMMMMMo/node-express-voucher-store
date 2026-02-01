@@ -43,7 +43,7 @@
                     <% cart.forEach((item) => { %>
                       <tr data-key="<%= (item.key || item.slug) %>">
                         <td class="product-thumbnail">
-                          <img src="<%= item.imagePath %>" alt="<%= item.name %>" class="img-fluid">
+                          <img src="<%= item.imagePath || '/images/products/product-default.jpg' %>" alt="<%= item.name %>" class="img-fluid">
                         </td>
                         <td class="product-name">
                           <h2 class="h5 text-black"><%= item.name %></h2>

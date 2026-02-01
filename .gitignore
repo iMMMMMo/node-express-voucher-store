@@ -1,6 +1,9 @@
 node_modules/
 .env
 /generated/prisma
-/public/images/pages
-/public/images/products
-/public/images/banners
+/public/images/pages/*
+!/public/images/pages/page-default.jpg
+/public/images/products/*
+!/public/images/products/product-default.jpg
+/public/images/banners/*
+!/public/images/banners/banner-default.jpg

@@ -122,7 +122,7 @@ const repairCartPrices = async (cart) => {
 
         item.price = Number.isFinite(unitFinal) ? unitFinal : 0;
         if (!item.name) item.name = p.name;
-        if (!item.imagePath) item.imagePath = p.imagePath || '/images/cloth_1.jpg';
+        if (!item.imagePath) item.imagePath = p.imagePath || '/images/products/product-default.jpg';
     });
 
     return cart;
