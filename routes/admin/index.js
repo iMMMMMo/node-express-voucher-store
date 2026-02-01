@@ -3,6 +3,7 @@ const router = express.Router();
 
 const attachUser = require('../../middleware/attachUser');
 const adminRequired = require('../../middleware/adminRequired');
+const flash = require('../../middleware/flash');
 
 const adminPagesRoutes = require('./pages');
 const adminProductsRoutes = require('./products');
@@ -13,6 +14,7 @@ const adminNavigationsRoutes = require('./navigations');
 
 router.use(attachUser);
 router.use(adminRequired);
+router.use(flash);
 
 router.use('/pages', adminPagesRoutes);
 router.use('/banners', adminBannersRoutes);

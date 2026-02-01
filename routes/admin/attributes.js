@@ -14,7 +14,6 @@ router.get("/", async (req, res) => {
       viewFile: "../admin/attributes/index",
       viewData: {
         attributes,
-        error: null,
       },
     });
   } catch (error) {
@@ -170,33 +169,35 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.redirect("/admin/attributes");
+      req.flash("error", "Invalid attribute id.");
+      return req.flashRedirect("/admin/attributes");
     }
 
     const id = parseIntSafe(req.params.id);
-    if (!id) return res.redirect("/admin/attributes");
+    if (!id) {
+      req.flash("error", "Invalid attribute id.");
+      return req.flashRedirect("/admin/attributes");
+    }
 
     try {
       const attribute = await ProductAttributeModel.findByIdWithValuesCount(id);
-      if (!attribute) return res.redirect("/admin/attributes");
+      if (!attribute) {
+        req.flash("error", "Attribute not found.");
+        return req.flashRedirect("/admin/attributes");
+      }
 
       if ((attribute._count?.values || 0) > 0) {
-        const attributes = await ProductAttributeModel.findAllWithValuesCount();
-        return res.status(400).render("admin/layout", {
-          title: "Admin | Attributes",
-          viewFile: "../admin/attributes/index",
-          viewData: {
-            attributes,
-            error: "Cannot delete attribute that has values assigned to products.",
-          },
-        });
+        req.flash("error", "Cannot delete attribute that has values assigned to products.");
+        return req.flashRedirect("/admin/attributes");
       }
 
       await ProductAttributeModel.delete(id);
-      return res.redirect("/admin/attributes");
+      req.flash("success", "Attribute deleted.");
+      return req.flashRedirect("/admin/attributes");
     } catch (error) {
       console.error("Error deleting attribute:", error);
-      return res.redirect("/admin/attributes");
+      req.flash("error", "Could not delete attribute.");
+      return req.flashRedirect("/admin/attributes");
     }
   }
 );

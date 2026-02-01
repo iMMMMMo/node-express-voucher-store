@@ -118,6 +118,31 @@
       </aside>
 
       <main class="app-main">
+        <% const flashMessages = (typeof flash !== 'undefined' && flash) ? flash : {}; %>
+        <% const flashErrors = (flashMessages && Array.isArray(flashMessages.error)) ? flashMessages.error : []; %>
+        <% const flashSuccesses = (flashMessages && Array.isArray(flashMessages.success)) ? flashMessages.success : []; %>
+        <% const flashInfos = (flashMessages && Array.isArray(flashMessages.info)) ? flashMessages.info : []; %>
+        <% const flashWarnings = (flashMessages && Array.isArray(flashMessages.warning)) ? flashMessages.warning : []; %>
+
+        <% if (flashErrors.length || flashSuccesses.length || flashInfos.length || flashWarnings.length) { %>
+          <div class="app-content pt-3">
+            <div class="container-fluid">
+              <% flashErrors.forEach((msg) => { %>
+                <div class="alert alert-danger" role="alert"><%= msg %></div>
+              <% }) %>
+              <% flashWarnings.forEach((msg) => { %>
+                <div class="alert alert-warning" role="alert"><%= msg %></div>
+              <% }) %>
+              <% flashInfos.forEach((msg) => { %>
+                <div class="alert alert-info" role="alert"><%= msg %></div>
+              <% }) %>
+              <% flashSuccesses.forEach((msg) => { %>
+                <div class="alert alert-success" role="alert"><%= msg %></div>
+              <% }) %>
+            </div>
+          </div>
+        <% } %>
+
         <%- include(viewFile) %>
       </main>
 

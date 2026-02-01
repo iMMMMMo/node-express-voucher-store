@@ -345,34 +345,38 @@ router.post(
   [param("id").isInt({ min: 1 }).withMessage("Invalid product id.")],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.redirect("/admin/products");
+    if (!errors.isEmpty()) {
+      req.flash("error", "Invalid product id.");
+      return req.flashRedirect("/admin/products");
+    }
 
     const id = parseIntSafe(req.params.id);
-    if (!id) return res.redirect("/admin/products");
+    if (!id) {
+      req.flash("error", "Invalid product id.");
+      return req.flashRedirect("/admin/products");
+    }
 
     try {
       const product = await ProductModel.findByIdWithAdminCounts(id);
-      if (!product) return res.redirect("/admin/products");
+      if (!product) {
+        req.flash("error", "Product not found.");
+        return req.flashRedirect("/admin/products");
+      }
 
       const attrsCount = product._count?.attributes || 0;
       const orderItemsCount = product._count?.orderItems || 0;
       if (attrsCount > 0 || orderItemsCount > 0) {
-        const products = await ProductModel.findAll();
-        return res.status(400).render("admin/layout", {
-          title: "Admin | Products",
-          viewFile: "../admin/products/index",
-          viewData: {
-            products,
-            error: "Cannot delete product that has orders or attribute values assigned.",
-          },
-        });
+        req.flash("error", "Cannot delete product that has orders or attribute values assigned.");
+        return req.flashRedirect("/admin/products");
       }
 
       await ProductModel.delete(id);
-      return res.redirect("/admin/products");
+      req.flash("success", "Product deleted.");
+      return req.flashRedirect("/admin/products");
     } catch (error) {
       console.error("Error deleting product:", error);
-      return res.redirect("/admin/products");
+      req.flash("error", "Could not delete product.");
+      return req.flashRedirect("/admin/products");
     }
   }
 );

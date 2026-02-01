@@ -274,29 +274,32 @@ router.post(
   "/:id/delete",
   [param("id").isInt({ min: 1 }).withMessage("Invalid page id.")],
   async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      req.flash("error", "Invalid page id.");
+      return req.flashRedirect("/admin/pages");
+    }
+
     const id = parseIntSafe(req.params.id);
     if (!id) {
-      return res.redirect("/admin/pages");
+      req.flash("error", "Invalid page id.");
+      return req.flashRedirect("/admin/pages");
     }
 
     try {
       const existingPage = await PageModel.findByIdForUser(id, req.session.userId);
       if (!existingPage) {
-        return res.redirect("/admin/pages");
+        req.flash("error", "Page not found.");
+        return req.flashRedirect("/admin/pages");
       }
 
       await PageModel.delete(id);
-      return res.redirect("/admin/pages");
+      req.flash("success", "Page deleted.");
+      return req.flashRedirect("/admin/pages");
     } catch (error) {
       console.error("Error deleting page:", error);
-      return res.status(500).render("admin/layout", {
-        title: "Admin | Pages",
-        viewFile: "../admin/pages/index",
-        viewData: {
-          pages: await PageModel.findAllByUserId(req.session.userId).catch(() => []),
-          error: "Could not delete page.",
-        },
-      });
+      req.flash("error", "Could not delete page.");
+      return req.flashRedirect("/admin/pages");
     }
   }
 );

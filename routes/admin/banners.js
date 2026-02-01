@@ -269,19 +269,31 @@ router.post(
   [param("id").isInt({ min: 1 }).withMessage("Invalid banner id.")],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.redirect("/admin/banners");
+    if (!errors.isEmpty()) {
+      req.flash("error", "Invalid banner id.");
+      return req.flashRedirect("/admin/banners");
+    }
 
     const id = parseIntSafe(req.params.id);
+    if (!id) {
+      req.flash("error", "Invalid banner id.");
+      return req.flashRedirect("/admin/banners");
+    }
 
     try {
       const banner = await BannerModel.findByIdForUser(id, req.session.userId);
-      if (!banner) return res.redirect("/admin/banners");
+      if (!banner) {
+        req.flash("error", "Banner not found.");
+        return req.flashRedirect("/admin/banners");
+      }
 
       await BannerModel.delete(id);
-      return res.redirect("/admin/banners");
+      req.flash("success", "Banner deleted.");
+      return req.flashRedirect("/admin/banners");
     } catch (error) {
       console.error("Error deleting banner:", error);
-      return res.redirect("/admin/banners");
+      req.flash("error", "Could not delete banner.");
+      return req.flashRedirect("/admin/banners");
     }
   }
 );

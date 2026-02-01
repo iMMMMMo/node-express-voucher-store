@@ -114,7 +114,6 @@ router.get("/", async (req, res) => {
       viewFile: "../admin/navigations/index",
       viewData: {
         navigations,
-        error: null,
       },
     });
   } catch (error) {
@@ -391,33 +390,38 @@ router.post(
   [param("id").isInt({ min: 1 }).withMessage("Invalid navigation id.")],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.redirect("/admin/navigations");
+    if (!errors.isEmpty()) {
+      req.flash("error", "Invalid navigation id.");
+      return req.flashRedirect("/admin/navigations");
+    }
 
     const id = parseIntSafe(req.params.id);
     const userId = req.session.userId;
-    if (!id || !userId) return res.redirect("/admin/navigations");
+    if (!id || !userId) {
+      req.flash("error", "Invalid navigation id.");
+      return req.flashRedirect("/admin/navigations");
+    }
 
     try {
       const navigation = await NavigationModel.findByIdForUser(id, userId);
-      if (!navigation) return res.redirect("/admin/navigations");
+      if (!navigation) {
+        req.flash("error", "Navigation item not found.");
+        return req.flashRedirect("/admin/navigations");
+      }
 
       if ((navigation._count?.children || 0) > 0) {
-        const navigations = await NavigationModel.findAllForUser(userId);
-        return res.status(400).render("admin/layout", {
-          title: "Admin | Navigations",
-          viewFile: "../admin/navigations/index",
-          viewData: {
-            navigations,
-            error: "Cannot delete navigation item that has children.",
-          },
-        });
+        req.flash("error", "Cannot delete navigation item that has children.");
+        return req.flashRedirect("/admin/navigations");
       }
 
       await NavigationModel.deleteForUser(id, userId);
-      return res.redirect("/admin/navigations");
+
+      req.flash("success", "Navigation item deleted.");
+      return req.flashRedirect("/admin/navigations");
     } catch (error) {
       console.error("Error deleting navigation:", error);
-      return res.redirect("/admin/navigations");
+      req.flash("error", "Could not delete navigation item.");
+      return req.flashRedirect("/admin/navigations");
     }
   }
 );
