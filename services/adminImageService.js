@@ -103,7 +103,26 @@ const create = ({
   };
 
   return {
-    uploadSingle: (fieldName) => upload.single(fieldName),
+    uploadSingle: (fieldName) => {
+      const single = upload.single(fieldName);
+
+      return (req, res, next) => {
+        single(req, res, (err) => {
+          if (!err) return next();
+
+          if (err && err.code === "LIMIT_FILE_SIZE") {
+            const maxMb = Math.max(1, Math.ceil(maxFileSizeBytes / (1024 * 1024)));
+            if (typeof req.flash === "function") {
+              req.flash("warning", `Image is too large. Max file size is ${maxMb} MB.`);
+            }
+            const back = req.get("referer");
+            return res.status(413).redirect(back || "/admin");
+          }
+
+          return next(err);
+        });
+      };
+    },
     listAvailableImages,
     resolveExistingImageSelection,
     normalizeUploadedImage,
