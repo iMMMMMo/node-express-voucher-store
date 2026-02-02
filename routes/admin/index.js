@@ -13,8 +13,8 @@ const adminBannersRoutes = require('./banners');
 const adminNavigationsRoutes = require('./navigations');
 
 router.use(attachUser);
-router.use(adminRequired);
 router.use(flash);
+router.use(adminRequired);
 
 router.use('/pages', adminPagesRoutes);
 router.use('/banners', adminBannersRoutes);

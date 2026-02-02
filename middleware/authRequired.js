@@ -3,7 +3,16 @@ const authRequired = (req, res, next) => {
         return next();
     }
     req.session.returnTo = req.originalUrl;
-    res.redirect('/auth/login');
+
+    if (typeof req.flash === 'function') {
+        req.flash('info', 'Log in to access this page.');
+    }
+
+    if (typeof req.flashRedirect === 'function') {
+        return req.flashRedirect('/auth/login');
+    }
+
+    return res.redirect('/auth/login');
 };
 
 module.exports = authRequired;

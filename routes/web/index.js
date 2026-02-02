@@ -5,9 +5,11 @@ const attachUser = require('../../middleware/attachUser');
 const attachStoreNavigation = require('../../middleware/attachStoreNavigation');
 const { getActiveBannersForHomepage } = require('../../services/bannerService');
 const ProductModel = require('../../models/productModel');
+const flash = require('../../middleware/flash');
 
 router.use(attachUser);
 router.use(attachStoreNavigation);
+router.use(flash);
 
 router.use('/shop', require('./shop'));
 router.use('/cart', require('./cart'));
