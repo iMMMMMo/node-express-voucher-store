@@ -119,7 +119,8 @@ router.post(
         isActive: formData.isActive,
       });
 
-      return res.redirect("/admin/banners");
+      req.flash("success", "Banner created.");
+      return req.flashRedirect("/admin/banners");
     } catch (error) {
       bannerImages.safeUnlink(req.file?.path);
       console.error("Error creating banner:", error);
@@ -143,12 +144,18 @@ router.get(
   [param("id").isInt({ min: 1 }).withMessage("Invalid banner id.")],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.redirect("/admin/banners");
+    if (!errors.isEmpty()) {
+      req.flash("warning", "Invalid banner id.");
+      return req.flashRedirect("/admin/banners");
+    }
 
     const id = parseIntSafe(req.params.id);
     try {
       const banner = await BannerModel.findByIdForUser(id, req.session.userId);
-      if (!banner) return res.redirect("/admin/banners");
+      if (!banner) {
+        req.flash("warning", "Banner not found.");
+        return req.flashRedirect("/admin/banners");
+      }
 
       return res.render("admin/layout", {
         title: "Admin | Edit banner",
@@ -171,7 +178,8 @@ router.get(
       });
     } catch (error) {
       console.error("Error loading banner for edit:", error);
-      return res.redirect("/admin/banners");
+      req.flash("error", "Could not load banner.");
+      return req.flashRedirect("/admin/banners");
     }
   }
 );
@@ -193,7 +201,8 @@ router.post(
     const banner = await BannerModel.findByIdForUser(id, req.session.userId);
     if (!banner) {
       bannerImages.safeUnlink(req.file?.path);
-      return res.redirect("/admin/banners");
+      req.flash("warning", "Banner not found.");
+      return req.flashRedirect("/admin/banners");
     }
 
     const formData = {
@@ -245,7 +254,8 @@ router.post(
         isActive: formData.isActive,
       });
 
-      return res.redirect("/admin/banners");
+      req.flash("success", "Banner updated.");
+      return req.flashRedirect("/admin/banners");
     } catch (error) {
       bannerImages.safeUnlink(req.file?.path);
       console.error("Error updating banner:", error);
@@ -270,20 +280,20 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      req.flash("error", "Invalid banner id.");
+      req.flash("warning", "Invalid banner id.");
       return req.flashRedirect("/admin/banners");
     }
 
     const id = parseIntSafe(req.params.id);
     if (!id) {
-      req.flash("error", "Invalid banner id.");
+      req.flash("warning", "Invalid banner id.");
       return req.flashRedirect("/admin/banners");
     }
 
     try {
       const banner = await BannerModel.findByIdForUser(id, req.session.userId);
       if (!banner) {
-        req.flash("error", "Banner not found.");
+        req.flash("warning", "Banner not found.");
         return req.flashRedirect("/admin/banners");
       }
 

@@ -216,7 +216,8 @@ router.post(
         isActive: isChecked(req.body.isActive),
       });
 
-      return res.redirect("/admin/navigations");
+      req.flash("success", "Navigation item created.");
+      return req.flashRedirect("/admin/navigations");
     } catch (error) {
       console.error("Error creating navigation:", error);
       return res.status(500).render("admin/layout", {
@@ -239,14 +240,20 @@ router.get(
   [param("id").isInt({ min: 1 }).withMessage("Invalid navigation id.")],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.redirect("/admin/navigations");
+    if (!errors.isEmpty()) {
+      req.flash("warning", "Invalid navigation id.");
+      return req.flashRedirect("/admin/navigations");
+    }
 
     const id = parseIntSafe(req.params.id);
     const userId = req.session.userId;
 
     try {
       const navigation = await NavigationModel.findByIdForUser(id, userId);
-      if (!navigation) return res.redirect("/admin/navigations");
+      if (!navigation) {
+        req.flash("warning", "Navigation item not found.");
+        return req.flashRedirect("/admin/navigations");
+      }
 
       const flat = await NavigationModel.findAllForUserAsParents(userId);
       const allForDesc = await NavigationModel.findAllFlatForUser(userId);
@@ -279,7 +286,8 @@ router.get(
       });
     } catch (error) {
       console.error("Error loading navigation:", error);
-      return res.redirect("/admin/navigations");
+      req.flash("error", "Could not load navigation.");
+      return req.flashRedirect("/admin/navigations");
     }
   }
 );
@@ -366,8 +374,13 @@ router.post(
         isActive: isChecked(req.body.isActive),
       });
 
-      if (!updated.ok) return res.redirect("/admin/navigations");
-      return res.redirect("/admin/navigations");
+      if (!updated.ok) {
+        req.flash("warning", "Navigation item not found.");
+        return req.flashRedirect("/admin/navigations");
+      }
+
+      req.flash("success", "Navigation item updated.");
+      return req.flashRedirect("/admin/navigations");
     } catch (error) {
       console.error("Error updating navigation:", error);
       return res.status(500).render("admin/layout", {
@@ -391,26 +404,26 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      req.flash("error", "Invalid navigation id.");
+      req.flash("warning", "Invalid navigation id.");
       return req.flashRedirect("/admin/navigations");
     }
 
     const id = parseIntSafe(req.params.id);
     const userId = req.session.userId;
     if (!id || !userId) {
-      req.flash("error", "Invalid navigation id.");
+      req.flash("warning", "Invalid navigation id.");
       return req.flashRedirect("/admin/navigations");
     }
 
     try {
       const navigation = await NavigationModel.findByIdForUser(id, userId);
       if (!navigation) {
-        req.flash("error", "Navigation item not found.");
+        req.flash("warning", "Navigation item not found.");
         return req.flashRedirect("/admin/navigations");
       }
 
       if ((navigation._count?.children || 0) > 0) {
-        req.flash("error", "Cannot delete navigation item that has children.");
+        req.flash("warning", "Cannot delete navigation item that has children.");
         return req.flashRedirect("/admin/navigations");
       }
 

@@ -143,7 +143,8 @@ router.post(
         imagePath,
       });
 
-      return res.redirect("/admin/products");
+      req.flash("success", "Product created.");
+      return req.flashRedirect("/admin/products");
     } catch (error) {
       productImages.safeUnlink(req.file?.path);
       const uniqueMessage = handleUniqueSlugError(error);
@@ -169,12 +170,18 @@ router.get(
   [param("id").isInt({ min: 1 }).withMessage("Invalid product id.")],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.redirect("/admin/products");
+    if (!errors.isEmpty()) {
+      req.flash("warning", "Invalid product id.");
+      return req.flashRedirect("/admin/products");
+    }
 
     const id = parseIntSafe(req.params.id);
     try {
       const product = await ProductModel.findByIdWithAdminCounts(id);
-      if (!product) return res.redirect("/admin/products");
+      if (!product) {
+        req.flash("warning", "Product not found.");
+        return req.flashRedirect("/admin/products");
+      }
 
       const availableImages = productImages.listAvailableImages();
       const currentBase = product.imagePath ? String(product.imagePath).split("/").filter(Boolean).pop() : "";
@@ -202,21 +209,28 @@ router.get(
       });
     } catch (error) {
       console.error("Error loading product:", error);
-      return res.redirect("/admin/products");
+      req.flash("error", "Could not load product.");
+      return req.flashRedirect("/admin/products");
     }
   }
 );
 
 router.get("/:id/attributes", async (req, res) => {
   const id = parseIntSafe(req.params.id);
-  if (!id) return res.redirect("/admin/products");
+  if (!id) {
+    req.flash("warning", "Invalid product id.");
+    return req.flashRedirect("/admin/products");
+  }
 
   try {
     const allAttributes = await ProductAttributeModel.findAllForSelect();
 
     const product = await ProductModel.findByIdWithAttributesForAdmin(id);
 
-    if (!product) return res.redirect("/admin/products");
+    if (!product) {
+      req.flash("warning", "Product not found.");
+      return req.flashRedirect("/admin/products");
+    }
 
     res.render("admin/layout", {
       title: `Admin | Product attributes`,
@@ -231,7 +245,8 @@ router.get("/:id/attributes", async (req, res) => {
     });
   } catch (error) {
     console.error("Error loading product attributes:", error);
-    return res.redirect("/admin/products");
+    req.flash("error", "Could not load product attributes.");
+    return req.flashRedirect("/admin/products");
   }
 });
 
@@ -278,7 +293,8 @@ router.post(
 
     if (!product) {
       productImages.safeUnlink(req.file?.path);
-      return res.redirect("/admin/products");
+      req.flash("warning", "Product not found.");
+      return req.flashRedirect("/admin/products");
     }
 
     if (!errors.isEmpty()) {
@@ -319,7 +335,8 @@ router.post(
         imagePath,
       });
 
-      return res.redirect("/admin/products");
+      req.flash("success", "Product updated.");
+      return req.flashRedirect("/admin/products");
     } catch (error) {
       productImages.safeUnlink(req.file?.path);
       const uniqueMessage = handleUniqueSlugError(error);
@@ -346,27 +363,27 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      req.flash("error", "Invalid product id.");
+      req.flash("warning", "Invalid product id.");
       return req.flashRedirect("/admin/products");
     }
 
     const id = parseIntSafe(req.params.id);
     if (!id) {
-      req.flash("error", "Invalid product id.");
+      req.flash("warning", "Invalid product id.");
       return req.flashRedirect("/admin/products");
     }
 
     try {
       const product = await ProductModel.findByIdWithAdminCounts(id);
       if (!product) {
-        req.flash("error", "Product not found.");
+        req.flash("warning", "Product not found.");
         return req.flashRedirect("/admin/products");
       }
 
       const attrsCount = product._count?.attributes || 0;
       const orderItemsCount = product._count?.orderItems || 0;
       if (attrsCount > 0 || orderItemsCount > 0) {
-        req.flash("error", "Cannot delete product that has orders or attribute values assigned.");
+        req.flash("warning", "Cannot delete product that has orders or attribute values assigned.");
         return req.flashRedirect("/admin/products");
       }
 
@@ -383,14 +400,20 @@ router.post(
 
 router.post("/:id/attributes", async (req, res) => {
   const id = parseIntSafe(req.params.id);
-  if (!id) return res.redirect("/admin/products");
+  if (!id) {
+    req.flash("warning", "Invalid product id.");
+    return req.flashRedirect("/admin/products");
+  }
 
   try {
     const allAttributes = await ProductAttributeModel.findAllForSelect();
     const attributeIds = new Set(allAttributes.map((a) => a.id));
 
     const product = await ProductModel.findByIdWithAttributesForAdmin(id);
-    if (!product) return res.redirect("/admin/products");
+    if (!product) {
+      req.flash("warning", "Product not found.");
+      return req.flashRedirect("/admin/products");
+    }
 
     const errors = [];
     const deletes = [];

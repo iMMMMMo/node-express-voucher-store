@@ -65,7 +65,8 @@ router.post(
     try {
       await ProductAttributeModel.create({ name: normalizeText(req.body.name) });
 
-      return res.redirect("/admin/attributes");
+      req.flash("success", "Attribute created.");
+      return req.flashRedirect("/admin/attributes");
     } catch (error) {
       console.error("Error creating attribute:", error);
       return res.status(500).render("admin/layout", {
@@ -88,14 +89,16 @@ router.get(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.redirect("/admin/attributes");
+      req.flash("warning", "Invalid attribute id.");
+      return req.flashRedirect("/admin/attributes");
     }
 
     const id = parseIntSafe(req.params.id);
     try {
       const attribute = await ProductAttributeModel.findByIdWithValuesCount(id);
       if (!attribute) {
-        return res.redirect("/admin/attributes");
+        req.flash("warning", "Attribute not found.");
+        return req.flashRedirect("/admin/attributes");
       }
 
       return res.render("admin/layout", {
@@ -110,7 +113,8 @@ router.get(
       });
     } catch (error) {
       console.error("Error loading attribute:", error);
-      return res.redirect("/admin/attributes");
+      req.flash("error", "Could not load attribute.");
+      return req.flashRedirect("/admin/attributes");
     }
   }
 );
@@ -145,7 +149,8 @@ router.post(
     try {
       await ProductAttributeModel.update(id, { name: normalizeText(req.body.name) });
 
-      return res.redirect("/admin/attributes");
+      req.flash("success", "Attribute updated.");
+      return req.flashRedirect("/admin/attributes");
     } catch (error) {
       console.error("Error updating attribute:", error);
       const attribute = await ProductAttributeModel.findByIdWithValuesCount(id).catch(() => null);
@@ -169,25 +174,25 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      req.flash("error", "Invalid attribute id.");
+      req.flash("warning", "Invalid attribute id.");
       return req.flashRedirect("/admin/attributes");
     }
 
     const id = parseIntSafe(req.params.id);
     if (!id) {
-      req.flash("error", "Invalid attribute id.");
+      req.flash("warning", "Invalid attribute id.");
       return req.flashRedirect("/admin/attributes");
     }
 
     try {
       const attribute = await ProductAttributeModel.findByIdWithValuesCount(id);
       if (!attribute) {
-        req.flash("error", "Attribute not found.");
+        req.flash("warning", "Attribute not found.");
         return req.flashRedirect("/admin/attributes");
       }
 
       if ((attribute._count?.values || 0) > 0) {
-        req.flash("error", "Cannot delete attribute that has values assigned to products.");
+        req.flash("warning", "Cannot delete attribute that has values assigned to products.");
         return req.flashRedirect("/admin/attributes");
       }
 

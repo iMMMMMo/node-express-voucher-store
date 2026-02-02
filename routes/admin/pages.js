@@ -116,7 +116,8 @@ router.post(
         imagePath,
       });
 
-      return res.redirect("/admin/pages");
+      req.flash("success", "Page created.");
+      return req.flashRedirect("/admin/pages");
     } catch (error) {
       pageImages.safeUnlink(req.file?.path);
       const uniqueMessage = handleUniqueUrlError(error);
@@ -143,14 +144,16 @@ router.get(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.redirect("/admin/pages");
+      req.flash("warning", "Invalid page id.");
+      return req.flashRedirect("/admin/pages");
     }
 
     const id = parseIntSafe(req.params.id);
     try {
       const page = await PageModel.findByIdForUser(id, req.session.userId);
       if (!page) {
-        return res.redirect("/admin/pages");
+        req.flash("warning", "Page not found.");
+        return req.flashRedirect("/admin/pages");
       }
 
       return res.render("admin/layout", {
@@ -171,7 +174,8 @@ router.get(
       });
     } catch (error) {
       console.error("Error loading page:", error);
-      return res.redirect("/admin/pages");
+      req.flash("error", "Could not load page.");
+      return req.flashRedirect("/admin/pages");
     }
   }
 );
@@ -224,7 +228,8 @@ router.post(
 
     try {
       if (!existingPage) {
-        return res.redirect("/admin/pages");
+        req.flash("warning", "Page not found.");
+        return req.flashRedirect("/admin/pages");
       }
 
       let imagePath;
@@ -248,7 +253,8 @@ router.post(
         imagePath,
       });
 
-      return res.redirect("/admin/pages");
+      req.flash("success", "Page updated.");
+      return req.flashRedirect("/admin/pages");
     } catch (error) {
       pageImages.safeUnlink(req.file?.path);
       const uniqueMessage = handleUniqueUrlError(error);
@@ -276,20 +282,20 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      req.flash("error", "Invalid page id.");
+      req.flash("warning", "Invalid page id.");
       return req.flashRedirect("/admin/pages");
     }
 
     const id = parseIntSafe(req.params.id);
     if (!id) {
-      req.flash("error", "Invalid page id.");
+      req.flash("warning", "Invalid page id.");
       return req.flashRedirect("/admin/pages");
     }
 
     try {
       const existingPage = await PageModel.findByIdForUser(id, req.session.userId);
       if (!existingPage) {
-        req.flash("error", "Page not found.");
+        req.flash("warning", "Page not found.");
         return req.flashRedirect("/admin/pages");
       }
 
@@ -334,12 +340,16 @@ router.use((err, req, res, next) => {
 
   const id = parseIntSafe(req.params.id);
   if (!id) {
-    return res.redirect("/admin/pages");
+    req.flash("warning", "Invalid page id.");
+    return req.flashRedirect("/admin/pages");
   }
 
   return PageModel.findByIdForUser(id, req.session.userId)
     .then((page) => {
-      if (!page) return res.redirect("/admin/pages");
+      if (!page) {
+        req.flash("warning", "Page not found.");
+        return req.flashRedirect("/admin/pages");
+      }
 
       return res.status(400).render("admin/layout", {
         title: "Admin | Edit page",
@@ -360,7 +370,8 @@ router.use((err, req, res, next) => {
     })
     .catch((e) => {
       console.error("Upload error while loading page:", e);
-      return res.redirect("/admin/pages");
+      req.flash("error", "Upload failed.");
+      return req.flashRedirect("/admin/pages");
     });
 });
 
