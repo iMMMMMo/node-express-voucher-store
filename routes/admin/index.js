@@ -31,4 +31,16 @@ router.get('/', (req, res) => {
   });
 });
 
+router.use((req, res) => {
+  return res.status(404).render('admin/layout', {
+    title: 'Admin | Not Found',
+    viewFile: '../admin/error',
+    viewData: {
+      status: 404,
+      message: 'Page not found',
+      url: req.originalUrl,
+    },
+  });
+});
+
 module.exports = router;

@@ -1,0 +1,53 @@
+<!--begin::App Content Header-->
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <% const status = (viewData && viewData.status) ? viewData.status : 404; %>
+        <h3 class="mb-0"><%= status %> Not Found</h3>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+          <li class="breadcrumb-item"><a href="/admin">Home</a></li>
+          <li class="breadcrumb-item active" aria-current="page"><%= status %></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+<!--end::App Content Header-->
+
+<div class="app-content">
+  <div class="container-fluid">
+    <% const message = (viewData && viewData.message) ? viewData.message : 'Page not found'; %>
+    <% const url = (viewData && viewData.url) ? viewData.url : null; %>
+
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-10 col-lg-8 col-xl-7">
+        <div class="card shadow-sm">
+          <div class="card-body p-4 p-md-5 text-center">
+            <div class="display-1 fw-bold text-secondary mb-2"><%= status %></div>
+            <h1 class="h3 mb-3"><%= message %></h1>
+
+            <% if (url) { %>
+              <p class="text-muted mb-4">Requested: <code><%= url %></code></p>
+            <% } else { %>
+              <p class="text-muted mb-4">The page you requested doesn’t exist.</p>
+            <% } %>
+
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
+              <a class="btn btn-primary" href="/admin">
+                <i class="bi bi-speedometer2 me-1"></i>
+                Dashboard
+              </a>
+              <a class="btn btn-outline-secondary" href="javascript:history.back()">
+                <i class="bi bi-arrow-left me-1"></i>
+                Go back
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

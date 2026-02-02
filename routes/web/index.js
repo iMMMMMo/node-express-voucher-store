@@ -40,4 +40,16 @@ router.get('/', async (req, res) => {
 	}
 });
 
+router.use((req, res, next) => {
+	if (req.originalUrl && (req.originalUrl.startsWith('/api/') || req.originalUrl.startsWith('/admin'))) {
+		return next();
+	}
+
+	return res.status(404).render('page', {
+		title: 'Page Not Found | Voucher Shop',
+		activePage: '',
+		page: { title: 'Page not found', content: null, imagePath: null },
+	});
+});
+
 module.exports = router;
