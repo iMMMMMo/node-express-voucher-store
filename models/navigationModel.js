@@ -122,7 +122,11 @@ const NavigationModel = {
     });
   },
 
-  updateForUser: async (id, userId, { parentId = null, title, url, order = 0, isActive = true }) => {
+  updateForUser: async (
+    id,
+    userId,
+    { parentId = null, title, url, order = 0, isActive = true },
+  ) => {
     if (!id || !userId) return { ok: false };
 
     const result = await prisma.navigation.updateMany({

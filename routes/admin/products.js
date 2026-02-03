@@ -89,12 +89,14 @@ router.post(
     body("description").optional({ nullable: true }).trim(),
     body("basePrice").custom((value) => {
       const parsed = parseMoney(value);
-      if (!Number.isFinite(parsed) || parsed < 0) throw new Error("Base price must be a valid non-negative number.");
+      if (!Number.isFinite(parsed) || parsed < 0)
+        throw new Error("Base price must be a valid non-negative number.");
       return true;
     }),
     body("vat").custom((value) => {
       const parsed = parseMoney(value);
-      if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) throw new Error("VAT must be between 0 and 100.");
+      if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100)
+        throw new Error("VAT must be between 0 and 100.");
       return true;
     }),
   ],
@@ -148,7 +150,9 @@ router.post(
     } catch (error) {
       productImages.safeUnlink(req.file?.path);
       const uniqueMessage = handleUniqueSlugError(error);
-      const serverErrors = uniqueMessage ? [{ msg: uniqueMessage }] : [{ msg: "Could not create product." }];
+      const serverErrors = uniqueMessage
+        ? [{ msg: uniqueMessage }]
+        : [{ msg: "Could not create product." }];
       console.error("Error creating product:", error);
       return res.status(500).render("admin/layout", {
         title: "Admin | New product",
@@ -162,7 +166,7 @@ router.post(
         },
       });
     }
-  }
+  },
 );
 
 router.get(
@@ -184,10 +188,13 @@ router.get(
       }
 
       const availableImages = productImages.listAvailableImages();
-      const currentBase = product.imagePath ? String(product.imagePath).split("/").filter(Boolean).pop() : "";
-      const existingImage = currentBase && availableImages.some((img) => String(img.name) === String(currentBase))
-        ? currentBase
+      const currentBase = product.imagePath
+        ? String(product.imagePath).split("/").filter(Boolean).pop()
         : "";
+      const existingImage =
+        currentBase && availableImages.some((img) => String(img.name) === String(currentBase))
+          ? currentBase
+          : "";
 
       return res.render("admin/layout", {
         title: "Admin | Edit product",
@@ -212,7 +219,7 @@ router.get(
       req.flash("error", "Could not load product.");
       return req.flashRedirect("/admin/products");
     }
-  }
+  },
 );
 
 router.get("/:id/attributes", async (req, res) => {
@@ -265,12 +272,14 @@ router.post(
     body("description").optional({ nullable: true }).trim(),
     body("basePrice").custom((value) => {
       const parsed = parseMoney(value);
-      if (!Number.isFinite(parsed) || parsed < 0) throw new Error("Base price must be a valid non-negative number.");
+      if (!Number.isFinite(parsed) || parsed < 0)
+        throw new Error("Base price must be a valid non-negative number.");
       return true;
     }),
     body("vat").custom((value) => {
       const parsed = parseMoney(value);
-      if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) throw new Error("VAT must be between 0 and 100.");
+      if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100)
+        throw new Error("VAT must be between 0 and 100.");
       return true;
     }),
   ],
@@ -287,9 +296,7 @@ router.post(
       existingImage: req.body.existingImage,
     };
 
-    const product = id
-      ? await ProductModel.findByIdWithAdminCounts(id).catch(() => null)
-      : null;
+    const product = id ? await ProductModel.findByIdWithAdminCounts(id).catch(() => null) : null;
 
     if (!product) {
       productImages.safeUnlink(req.file?.path);
@@ -340,7 +347,9 @@ router.post(
     } catch (error) {
       productImages.safeUnlink(req.file?.path);
       const uniqueMessage = handleUniqueSlugError(error);
-      const serverErrors = uniqueMessage ? [{ msg: uniqueMessage }] : [{ msg: "Could not update product." }];
+      const serverErrors = uniqueMessage
+        ? [{ msg: uniqueMessage }]
+        : [{ msg: "Could not update product." }];
       console.error("Error updating product:", error);
       return res.status(500).render("admin/layout", {
         title: "Admin | Edit product",
@@ -354,7 +363,7 @@ router.post(
         },
       });
     }
-  }
+  },
 );
 
 router.post(
@@ -395,7 +404,7 @@ router.post(
       req.flash("error", "Could not delete product.");
       return req.flashRedirect("/admin/products");
     }
-  }
+  },
 );
 
 router.post("/:id/attributes", async (req, res) => {

@@ -159,18 +159,22 @@ router.post(
   [
     body("title").trim().isLength({ min: 1, max: 160 }).withMessage("Title is required."),
     body("url").trim().isLength({ min: 1, max: 300 }).withMessage("URL is required."),
-    body("order").optional({ nullable: true }).custom((value) => {
-      const parsed = parseOrder(value);
-      if (!Number.isFinite(parsed)) throw new Error("Order must be an integer.");
-      return true;
-    }),
-    body("parentId").optional({ nullable: true }).custom((value) => {
-      const raw = (value ?? "").toString().trim();
-      if (!raw) return true;
-      const parsed = parseIntSafe(raw);
-      if (!parsed) throw new Error("Invalid parent.");
-      return true;
-    }),
+    body("order")
+      .optional({ nullable: true })
+      .custom((value) => {
+        const parsed = parseOrder(value);
+        if (!Number.isFinite(parsed)) throw new Error("Order must be an integer.");
+        return true;
+      }),
+    body("parentId")
+      .optional({ nullable: true })
+      .custom((value) => {
+        const raw = (value ?? "").toString().trim();
+        if (!raw) return true;
+        const parsed = parseIntSafe(raw);
+        if (!parsed) throw new Error("Invalid parent.");
+        return true;
+      }),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -205,7 +209,9 @@ router.post(
     try {
       const userId = req.session.userId;
       const parentId = parseOptionalId(req.body.parentId);
-      const resolvedParentId = parentId ? (await NavigationModel.findByIdForUser(parentId, userId))?.id ?? null : null;
+      const resolvedParentId = parentId
+        ? ((await NavigationModel.findByIdForUser(parentId, userId))?.id ?? null)
+        : null;
 
       await NavigationModel.create({
         userId,
@@ -232,7 +238,7 @@ router.post(
         },
       });
     }
-  }
+  },
 );
 
 router.get(
@@ -289,7 +295,7 @@ router.get(
       req.flash("error", "Could not load navigation.");
       return req.flashRedirect("/admin/navigations");
     }
-  }
+  },
 );
 
 router.post(
@@ -298,18 +304,22 @@ router.post(
     param("id").isInt({ min: 1 }).withMessage("Invalid navigation id."),
     body("title").trim().isLength({ min: 1, max: 160 }).withMessage("Title is required."),
     body("url").trim().isLength({ min: 1, max: 300 }).withMessage("URL is required."),
-    body("order").optional({ nullable: true }).custom((value) => {
-      const parsed = parseOrder(value);
-      if (!Number.isFinite(parsed)) throw new Error("Order must be an integer.");
-      return true;
-    }),
-    body("parentId").optional({ nullable: true }).custom((value) => {
-      const raw = (value ?? "").toString().trim();
-      if (!raw) return true;
-      const parsed = parseIntSafe(raw);
-      if (!parsed) throw new Error("Invalid parent.");
-      return true;
-    }),
+    body("order")
+      .optional({ nullable: true })
+      .custom((value) => {
+        const parsed = parseOrder(value);
+        if (!Number.isFinite(parsed)) throw new Error("Order must be an integer.");
+        return true;
+      }),
+    body("parentId")
+      .optional({ nullable: true })
+      .custom((value) => {
+        const raw = (value ?? "").toString().trim();
+        if (!raw) return true;
+        const parsed = parseIntSafe(raw);
+        if (!parsed) throw new Error("Invalid parent.");
+        return true;
+      }),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -324,7 +334,9 @@ router.post(
       isActive: isChecked(req.body.isActive),
     };
 
-    const navigation = id ? await NavigationModel.findByIdForUser(id, userId).catch(() => null) : null;
+    const navigation = id
+      ? await NavigationModel.findByIdForUser(id, userId).catch(() => null)
+      : null;
     const allForDesc = await NavigationModel.findAllFlatForUser(userId).catch(() => []);
     const descendants = id ? getDescendantIds(allForDesc, id) : new Set();
     const flatParents = await NavigationModel.findAllForUserAsParents(userId).catch(() => []);
@@ -363,8 +375,13 @@ router.post(
 
     try {
       const parentId = parseOptionalId(req.body.parentId);
-      const resolvedParentId = parentId ? (await NavigationModel.findByIdForUser(parentId, userId))?.id ?? null : null;
-      const safeParentId = resolvedParentId === id || (resolvedParentId && descendants.has(resolvedParentId)) ? null : resolvedParentId;
+      const resolvedParentId = parentId
+        ? ((await NavigationModel.findByIdForUser(parentId, userId))?.id ?? null)
+        : null;
+      const safeParentId =
+        resolvedParentId === id || (resolvedParentId && descendants.has(resolvedParentId))
+          ? null
+          : resolvedParentId;
 
       const updated = await NavigationModel.updateForUser(id, userId, {
         parentId: safeParentId,
@@ -395,7 +412,7 @@ router.post(
         },
       });
     }
-  }
+  },
 );
 
 router.post(
@@ -436,7 +453,7 @@ router.post(
       req.flash("error", "Could not delete navigation item.");
       return req.flashRedirect("/admin/navigations");
     }
-  }
+  },
 );
 
 module.exports = router;

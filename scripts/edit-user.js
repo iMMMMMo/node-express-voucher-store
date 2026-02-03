@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 require("dotenv").config();
 
 const bcrypt = require("bcrypt");
@@ -89,7 +87,8 @@ async function main() {
   const email = typeof args.email === "string" ? args.email.trim().toLowerCase() : "";
   if (!email) throw new Error("Missing required --email (existing email)");
 
-  const newEmail = typeof args["new-email"] === "string" ? args["new-email"].trim().toLowerCase() : undefined;
+  const newEmail =
+    typeof args["new-email"] === "string" ? args["new-email"].trim().toLowerCase() : undefined;
   const password = typeof args.password === "string" ? args.password : undefined;
   const role = normalizeRole(args.role);
   const name = typeof args.name === "string" ? args.name.trim() : undefined;
@@ -120,7 +119,9 @@ async function main() {
   }
 
   if (Object.keys(data).length === 0) {
-    throw new Error("Nothing to update. Provide at least one of: --new-email, --password, --role, --name, --phone, --clear-phone");
+    throw new Error(
+      "Nothing to update. Provide at least one of: --new-email, --password, --role, --name, --phone, --clear-phone",
+    );
   }
 
   const existing = await prisma.user.findUnique({

@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 require("dotenv").config();
 
 const bcrypt = require("bcrypt");
@@ -156,7 +154,14 @@ async function ensurePage({ url, title, content, imagePath, userId }) {
   return { page: created, created: true };
 }
 
-async function ensureNavigationItem({ userId, parentId = null, title, url, order = 0, isActive = true }) {
+async function ensureNavigationItem({
+  userId,
+  parentId = null,
+  title,
+  url,
+  order = 0,
+  isActive = true,
+}) {
   const existing = await prisma.navigation.findFirst({
     where: {
       parentId,
@@ -272,7 +277,6 @@ async function main() {
   const ensuredProducts = [];
   let productsCreated = 0;
   for (const product of products) {
-    // eslint-disable-next-line no-await-in-loop
     const result = await ensureProduct(product);
     ensuredProducts.push(result.product);
     if (result.created) productsCreated += 1;
@@ -293,7 +297,6 @@ async function main() {
     const product = productBySlug[item.slug];
     if (!product) continue;
 
-    // eslint-disable-next-line no-await-in-loop
     const result = await ensureAttributeValue({
       productId: product.id,
       attributeId: item.attributeId,

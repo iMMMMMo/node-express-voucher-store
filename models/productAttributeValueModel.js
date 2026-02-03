@@ -2,21 +2,14 @@ const prisma = require("../prisma/prismaClient");
 const { Prisma } = require("@prisma/client");
 
 const ProductAttributeValueModel = {
-  applyChangesForProduct: async (
-    productId,
-    {
-      deletes = [],
-      updates = [],
-      creates = [],
-    } = {}
-  ) => {
+  applyChangesForProduct: async (productId, { deletes = [], updates = [], creates = [] } = {}) => {
     const ops = [];
 
     for (const id of Array.isArray(deletes) ? deletes : []) {
       ops.push(
         prisma.productAttributeValue.delete({
           where: { id },
-        })
+        }),
       );
     }
 
@@ -29,7 +22,7 @@ const ProductAttributeValueModel = {
             value: row.value,
             priceDelta: new Prisma.Decimal(Number(row.priceDelta || 0).toFixed(2)),
           },
-        })
+        }),
       );
     }
 
@@ -42,7 +35,7 @@ const ProductAttributeValueModel = {
             value: row.value,
             priceDelta: new Prisma.Decimal(Number(row.priceDelta || 0).toFixed(2)),
           },
-        })
+        }),
       );
     }
 

@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 require("dotenv").config();
 
 const bcrypt = require("bcrypt");
@@ -77,7 +75,10 @@ function normalizeRole(role) {
 
 function defaultNameFromEmail(email) {
   const localPart = String(email).split("@")[0] || "User";
-  const cleaned = localPart.replace(/[._-]+/g, " ").replace(/\s+/g, " ").trim();
+  const cleaned = localPart
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   if (!cleaned) return "User";
   return cleaned
     .split(" ")
@@ -103,7 +104,8 @@ async function main() {
   if (!email) throw new Error("Missing required --email");
   if (!password) throw new Error("Missing required --password");
   if (password.length < 6) throw new Error("Password must be at least 6 characters long");
-  if (!name || name.length < 2) throw new Error("Name must be at least 2 characters long (provide --name if needed)");
+  if (!name || name.length < 2)
+    throw new Error("Name must be at least 2 characters long (provide --name if needed)");
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {

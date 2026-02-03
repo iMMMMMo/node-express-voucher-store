@@ -133,12 +133,7 @@ const create = ({
 
 const createForAdminCategory = (
   routeDir,
-  {
-    category,
-    filenamePrefix,
-    resize,
-    maxFileSizeBytes,
-  }
+  { category, filenamePrefix, resize, maxFileSizeBytes },
 ) => {
   const uploadDir = path.join(routeDir, "..", "..", "public", "images", category);
   const webBasePath = `/images/${category}`;

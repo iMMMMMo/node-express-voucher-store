@@ -121,7 +121,9 @@ router.post(
     } catch (error) {
       pageImages.safeUnlink(req.file?.path);
       const uniqueMessage = handleUniqueUrlError(error);
-      const serverErrors = uniqueMessage ? [{ msg: uniqueMessage }] : [{ msg: "Could not create page." }];
+      const serverErrors = uniqueMessage
+        ? [{ msg: uniqueMessage }]
+        : [{ msg: "Could not create page." }];
 
       console.error("Error creating page:", error);
       return res.status(500).render("admin/layout", {
@@ -135,7 +137,7 @@ router.post(
         },
       });
     }
-  }
+  },
 );
 
 router.get(
@@ -177,7 +179,7 @@ router.get(
       req.flash("error", "Could not load page.");
       return req.flashRedirect("/admin/pages");
     }
-  }
+  },
 );
 
 router.post(
@@ -241,7 +243,8 @@ router.post(
         if (rawExisting === "") {
           imagePath = null;
         } else {
-          imagePath = pageImages.resolveExistingImageSelection(rawExisting) || existingPage.imagePath || null;
+          imagePath =
+            pageImages.resolveExistingImageSelection(rawExisting) || existingPage.imagePath || null;
         }
       }
 
@@ -258,7 +261,9 @@ router.post(
     } catch (error) {
       pageImages.safeUnlink(req.file?.path);
       const uniqueMessage = handleUniqueUrlError(error);
-      const serverErrors = uniqueMessage ? [{ msg: uniqueMessage }] : [{ msg: "Could not update page." }];
+      const serverErrors = uniqueMessage
+        ? [{ msg: uniqueMessage }]
+        : [{ msg: "Could not update page." }];
 
       console.error("Error updating page:", error);
       return res.status(500).render("admin/layout", {
@@ -273,7 +278,7 @@ router.post(
         },
       });
     }
-  }
+  },
 );
 
 router.post(
@@ -307,15 +312,13 @@ router.post(
       req.flash("error", "Could not delete page.");
       return req.flashRedirect("/admin/pages");
     }
-  }
+  },
 );
 
 router.use((err, req, res, next) => {
   if (!err) return next();
 
-  const message = err instanceof multer.MulterError
-    ? err.message
-    : (err.message || "Upload failed.");
+  const message = err instanceof multer.MulterError ? err.message : err.message || "Upload failed.";
 
   const formData = {
     title: req.body?.title ?? "",
@@ -362,8 +365,9 @@ router.use((err, req, res, next) => {
           formData: {
             title: formData.title || page.title,
             url: formData.url || page.url,
-            content: (formData.content !== "") ? formData.content : (page.content || ""),
-            existingImage: (formData.existingImage ?? (page.imagePath ? path.basename(page.imagePath) : "")),
+            content: formData.content !== "" ? formData.content : page.content || "",
+            existingImage:
+              formData.existingImage ?? (page.imagePath ? path.basename(page.imagePath) : ""),
           },
         },
       });

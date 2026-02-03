@@ -28,7 +28,9 @@ const ProductPricingModel = {
   },
 
   findAttributeValuesForProductWithAttribute: async ({ productId, ids }) => {
-    const unique = Array.from(new Set((ids || []).filter((x) => Number.isFinite(Number(x)) && Number(x) > 0)));
+    const unique = Array.from(
+      new Set((ids || []).filter((x) => Number.isFinite(Number(x)) && Number(x) > 0)),
+    );
     if (!productId || !unique.length) return [];
 
     return await prisma.productAttributeValue.findMany({
@@ -44,7 +46,9 @@ const ProductPricingModel = {
   },
 
   findAttributeValuesByIdsWithAttribute: async (ids) => {
-    const unique = Array.from(new Set((ids || []).filter((x) => Number.isFinite(Number(x)) && Number(x) > 0)));
+    const unique = Array.from(
+      new Set((ids || []).filter((x) => Number.isFinite(Number(x)) && Number(x) > 0)),
+    );
     if (!unique.length) return [];
 
     return await prisma.productAttributeValue.findMany({

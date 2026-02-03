@@ -38,7 +38,8 @@ module.exports = function flashMiddleware(req, res, next) {
     const m = (message ?? "").toString();
     if (!m) return;
 
-    if (!req.session[FLASH_KEY]) req.session[FLASH_KEY] = { error: [], success: [], info: [], warning: [] };
+    if (!req.session[FLASH_KEY])
+      req.session[FLASH_KEY] = { error: [], success: [], info: [], warning: [] };
     if (!Array.isArray(req.session[FLASH_KEY][t])) req.session[FLASH_KEY][t] = [];
     req.session[FLASH_KEY][t].push(m);
   };

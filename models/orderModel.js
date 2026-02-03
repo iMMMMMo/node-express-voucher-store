@@ -122,7 +122,9 @@ const OrderModel = {
                   vat: new Prisma.Decimal(Number(it.vat || 0).toFixed(2)),
                   finalPrice: new Prisma.Decimal(Number(it.unitFinal || 0).toFixed(2)),
                   selectedAttributes:
-                    it.selectedAttributes && it.selectedAttributes.length ? it.selectedAttributes : null,
+                    it.selectedAttributes && it.selectedAttributes.length
+                      ? it.selectedAttributes
+                      : null,
                   recipientName: rec?.recipientName ?? null,
                   dedication: rec?.dedication ?? null,
                   status: "ACTIVE",

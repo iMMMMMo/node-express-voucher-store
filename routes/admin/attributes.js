@@ -80,7 +80,7 @@ router.post(
         },
       });
     }
-  }
+  },
 );
 
 router.get(
@@ -116,7 +116,7 @@ router.get(
       req.flash("error", "Could not load attribute.");
       return req.flashRedirect("/admin/attributes");
     }
-  }
+  },
 );
 
 router.post(
@@ -165,7 +165,7 @@ router.post(
         },
       });
     }
-  }
+  },
 );
 
 router.post(
@@ -204,7 +204,7 @@ router.post(
       req.flash("error", "Could not delete attribute.");
       return req.flashRedirect("/admin/attributes");
     }
-  }
+  },
 );
 
 module.exports = router;

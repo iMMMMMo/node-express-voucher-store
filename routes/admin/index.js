@@ -1,43 +1,43 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-const attachUser = require('../../middleware/attachUser');
-const adminRequired = require('../../middleware/adminRequired');
-const flash = require('../../middleware/flash');
+const attachUser = require("../../middleware/attachUser");
+const adminRequired = require("../../middleware/adminRequired");
+const flash = require("../../middleware/flash");
 
-const adminPagesRoutes = require('./pages');
-const adminProductsRoutes = require('./products');
-const adminAttributesRoutes = require('./attributes');
-const adminOrdersRoutes = require('./orders');
-const adminBannersRoutes = require('./banners');
-const adminNavigationsRoutes = require('./navigations');
+const adminPagesRoutes = require("./pages");
+const adminProductsRoutes = require("./products");
+const adminAttributesRoutes = require("./attributes");
+const adminOrdersRoutes = require("./orders");
+const adminBannersRoutes = require("./banners");
+const adminNavigationsRoutes = require("./navigations");
 
 router.use(attachUser);
 router.use(flash);
 router.use(adminRequired);
 
-router.use('/pages', adminPagesRoutes);
-router.use('/banners', adminBannersRoutes);
-router.use('/products', adminProductsRoutes);
-router.use('/attributes', adminAttributesRoutes);
-router.use('/orders', adminOrdersRoutes);
-router.use('/navigations', adminNavigationsRoutes);
+router.use("/pages", adminPagesRoutes);
+router.use("/banners", adminBannersRoutes);
+router.use("/products", adminProductsRoutes);
+router.use("/attributes", adminAttributesRoutes);
+router.use("/orders", adminOrdersRoutes);
+router.use("/navigations", adminNavigationsRoutes);
 
-router.get('/', (req, res) => {
-  res.render('admin/layout', {
-    title: 'Admin | Dashboard',
-    viewFile: '../admin/dashboard',
+router.get("/", (req, res) => {
+  res.render("admin/layout", {
+    title: "Admin | Dashboard",
+    viewFile: "../admin/dashboard",
     viewData: {},
   });
 });
 
 router.use((req, res) => {
-  return res.status(404).render('admin/layout', {
-    title: 'Admin | Not Found',
-    viewFile: '../admin/error',
+  return res.status(404).render("admin/layout", {
+    title: "Admin | Not Found",
+    viewFile: "../admin/error",
     viewData: {
       status: 404,
-      message: 'Page not found',
+      message: "Page not found",
       url: req.originalUrl,
     },
   });

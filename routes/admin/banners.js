@@ -67,11 +67,29 @@ router.post(
   "/",
   bannerImages.uploadSingle("image"),
   [
-    body("caption").optional({ nullable: true }).trim().isLength({ max: 200 }).withMessage("Caption max length is 200."),
-    body("content").optional({ nullable: true }).trim().isLength({ max: 5000 }).withMessage("Content max length is 5000."),
-    body("button").optional({ nullable: true }).trim().isLength({ max: 80 }).withMessage("Button text max length is 80."),
-    body("link").optional({ nullable: true }).trim().isLength({ max: 300 }).withMessage("Link max length is 300."),
-    body("order").optional({ nullable: true }).custom(() => true),
+    body("caption")
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 200 })
+      .withMessage("Caption max length is 200."),
+    body("content")
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 5000 })
+      .withMessage("Content max length is 5000."),
+    body("button")
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 80 })
+      .withMessage("Button text max length is 80."),
+    body("link")
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 300 })
+      .withMessage("Link max length is 300."),
+    body("order")
+      .optional({ nullable: true })
+      .custom(() => true),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -82,7 +100,8 @@ router.post(
       button: req.body.button,
       link: req.body.link,
       order: (req.body.order ?? "0").toString(),
-      isActive: req.body.isActive === "on" || req.body.isActive === "true" || req.body.isActive === true,
+      isActive:
+        req.body.isActive === "on" || req.body.isActive === "true" || req.body.isActive === true,
       existingImage: req.body.existingImage,
     };
 
@@ -136,7 +155,7 @@ router.post(
         },
       });
     }
-  }
+  },
 );
 
 router.get(
@@ -181,7 +200,7 @@ router.get(
       req.flash("error", "Could not load banner.");
       return req.flashRedirect("/admin/banners");
     }
-  }
+  },
 );
 
 router.post(
@@ -189,10 +208,26 @@ router.post(
   bannerImages.uploadSingle("image"),
   [
     param("id").isInt({ min: 1 }).withMessage("Invalid banner id."),
-    body("caption").optional({ nullable: true }).trim().isLength({ max: 200 }).withMessage("Caption max length is 200."),
-    body("content").optional({ nullable: true }).trim().isLength({ max: 5000 }).withMessage("Content max length is 5000."),
-    body("button").optional({ nullable: true }).trim().isLength({ max: 80 }).withMessage("Button text max length is 80."),
-    body("link").optional({ nullable: true }).trim().isLength({ max: 300 }).withMessage("Link max length is 300."),
+    body("caption")
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 200 })
+      .withMessage("Caption max length is 200."),
+    body("content")
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 5000 })
+      .withMessage("Content max length is 5000."),
+    body("button")
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 80 })
+      .withMessage("Button text max length is 80."),
+    body("link")
+      .optional({ nullable: true })
+      .trim()
+      .isLength({ max: 300 })
+      .withMessage("Link max length is 300."),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -211,7 +246,8 @@ router.post(
       button: req.body.button,
       link: req.body.link,
       order: (req.body.order ?? "0").toString(),
-      isActive: req.body.isActive === "on" || req.body.isActive === "true" || req.body.isActive === true,
+      isActive:
+        req.body.isActive === "on" || req.body.isActive === "true" || req.body.isActive === true,
       existingImage: req.body.existingImage,
     };
 
@@ -271,7 +307,7 @@ router.post(
         },
       });
     }
-  }
+  },
 );
 
 router.post(
@@ -305,7 +341,7 @@ router.post(
       req.flash("error", "Could not delete banner.");
       return req.flashRedirect("/admin/banners");
     }
-  }
+  },
 );
 
 module.exports = router;

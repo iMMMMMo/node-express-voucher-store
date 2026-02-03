@@ -58,7 +58,16 @@ const BannerModel = {
     });
   },
 
-  create: async ({ userId, imagePath = null, caption = null, content = null, button = null, link = null, order = 0, isActive = true }) => {
+  create: async ({
+    userId,
+    imagePath = null,
+    caption = null,
+    content = null,
+    button = null,
+    link = null,
+    order = 0,
+    isActive = true,
+  }) => {
     return await prisma.banner.create({
       data: {
         userId,
@@ -85,7 +94,19 @@ const BannerModel = {
     });
   },
 
-  update: async (id, { userId, imagePath = null, caption = null, content = null, button = null, link = null, order = 0, isActive = true }) => {
+  update: async (
+    id,
+    {
+      userId,
+      imagePath = null,
+      caption = null,
+      content = null,
+      button = null,
+      link = null,
+      order = 0,
+      isActive = true,
+    },
+  ) => {
     return await prisma.banner.update({
       where: { id },
       data: {
