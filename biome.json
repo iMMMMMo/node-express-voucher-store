@@ -1,0 +1,30 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "files": {
+    "ignore": ["node_modules/**", "public/**", "prisma/migrations/**"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noForEach": "off",
+        "useLiteralKeys": "off",
+        "useOptionalChain": "off"
+      },
+      "performance": {
+        "noDelete": "off"
+      },
+      "style": {
+        "noUnusedTemplateLiteral": "off",
+        "useNodejsImportProtocol": "off"
+      }
+    }
+  }
+}
