@@ -1,5 +1,6 @@
 node_modules/
 .env
+.env.docker
 /generated/prisma
 /public/images/pages/*
 !/public/images/pages/page-default.jpg
